@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { collectUsage } from "../../../src/services/usage";
+import { collectUsage } from "@/services/usage";
 
 function writeJson(pathname: string, data: unknown): void {
   mkdirSync(path.dirname(pathname), { recursive: true });

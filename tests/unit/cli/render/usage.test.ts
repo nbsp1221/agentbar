@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { formatEtaShort, formatUsageSections } from "../../../../src/cli/render/usage";
+import { formatEtaShort, formatUsageSections } from "@/cli/render/usage";
 
 describe("cli usage renderer", () => {
   beforeEach(() => {

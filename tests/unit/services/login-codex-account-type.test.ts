@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { inferCodexAccountType } from "../../../src/services/login-codex";
+import { inferCodexAccountType } from "@/services/login-codex";
 
 describe("login codex account type inference", () => {
   test("maps team/business-style claims to business", () => {

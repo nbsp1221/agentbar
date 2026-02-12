@@ -4,11 +4,11 @@ const { renderAsciiTableMock } = vi.hoisted(() => ({
   renderAsciiTableMock: vi.fn(() => "<table>")
 }));
 
-vi.mock("../../../../src/cli/render/ascii-table", () => ({
+vi.mock("@/cli/render/ascii-table", () => ({
   renderAsciiTable: renderAsciiTableMock
 }));
 
-import { formatAccounts } from "../../../../src/cli/render/accounts";
+import { formatAccounts } from "@/cli/render/accounts";
 
 describe("cli accounts renderer table style", () => {
   test("passes ccusage-like header and border colors for accounts table", () => {

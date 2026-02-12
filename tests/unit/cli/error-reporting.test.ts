@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { CliError, toReportedError } from "../../../src/cli/error-reporting";
+import { CliError, toReportedError } from "@/cli/error-reporting";
 
 describe("cli error reporting", () => {
   test("formats CliError with exitCode", () => {

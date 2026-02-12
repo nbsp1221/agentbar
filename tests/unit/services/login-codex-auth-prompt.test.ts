@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildCodexAuthorizeOutput } from "../../../src/services/login-codex";
+import { buildCodexAuthorizeOutput } from "@/services/login-codex";
 
 describe("login codex authorize output", () => {
   test("keeps the authorization URL as raw standalone text", () => {

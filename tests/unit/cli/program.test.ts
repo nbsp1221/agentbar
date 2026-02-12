@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildProgram } from "../../../src/cli/program";
+import { buildProgram } from "@/cli/program";
 
 describe("cli program", () => {
   test("registers MVP commands", () => {

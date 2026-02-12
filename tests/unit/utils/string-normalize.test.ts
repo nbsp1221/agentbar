@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { normalizeEmailSelector } from "../../../src/utils/string-normalize";
+import { normalizeEmailSelector } from "@/utils/string-normalize";
 
 describe("string normalize", () => {
   test("normalizes email-like selectors for matching", () => {

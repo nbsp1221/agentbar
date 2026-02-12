@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { snapshotFromCopilotUser } from "../../../../src/providers/copilot/usage";
+import { snapshotFromCopilotUser } from "@/providers/copilot/usage";
 
 describe("copilot usage mapping", () => {
   test("maps snake_case quota snapshot with request counts", () => {

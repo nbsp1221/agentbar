@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { inferCodexAccountId, inferCodexAccountType, inferCodexEmail } from "../../../../src/providers/codex/profile";
+import { inferCodexAccountId, inferCodexAccountType, inferCodexEmail } from "@/providers/codex/profile";
 
 describe("codex profile inference", () => {
   test("infers business from team-style claim", () => {

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { ensureFreshCodexProfile } from "../../../../src/providers/codex/refresh";
-import type { AuthProfile } from "../../../../src/store/types";
+import { ensureFreshCodexProfile } from "@/providers/codex/refresh";
+import type { AuthProfile } from "@/store/types";
 
 function b64url(input: string): string {
   return Buffer.from(input, "utf8")

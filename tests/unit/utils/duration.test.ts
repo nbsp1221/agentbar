@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatDurationShort } from "../../../src/utils/duration";
+import { formatDurationShort } from "@/utils/duration";
 
 describe("duration formatter", () => {
   test("formats multi-day durations as d/h", () => {

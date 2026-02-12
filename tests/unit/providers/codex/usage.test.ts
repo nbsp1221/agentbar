@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { snapshotFromPayload } from "../../../../src/providers/codex/usage";
+import { snapshotFromPayload } from "@/providers/codex/usage";
 
 describe("codex usage mapping", () => {
   test("maps wham payload windows", () => {

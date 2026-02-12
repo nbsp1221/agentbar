@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { makeTempStore, upsertProfile, readStore } from "../../../src/store/store";
+import { makeTempStore, upsertProfile, readStore } from "@/store/store";
 
 describe("secure store", () => {
   test("writes and reads profiles", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { parseDeviceTokenResponse, requestDeviceCode } from "../../../../src/providers/copilot/device-flow";
+import { parseDeviceTokenResponse, requestDeviceCode } from "@/providers/copilot/device-flow";
 
 describe("copilot device flow", () => {
   test("accepts access_token response", () => {

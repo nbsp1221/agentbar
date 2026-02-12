@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { formatAccounts } from "../../../../src/cli/render/accounts";
+import { formatAccounts } from "@/cli/render/accounts";
 
 describe("cli accounts renderer", () => {
   test("renders codex same-email multi-account rows", () => {

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, test } from "vitest";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { setProfileNote, clearProfileNote } from "../../../src/services/profile-notes";
+import { setProfileNote, clearProfileNote } from "@/services/profile-notes";
 
 function writeJson(pathname: string, data: unknown): void {
   mkdirSync(path.dirname(pathname), { recursive: true });

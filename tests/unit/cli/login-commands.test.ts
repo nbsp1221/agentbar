@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { buildProgram } from "../../../src/cli/program";
+import { buildProgram } from "@/cli/program";
 
 describe("login commands", () => {
   test("registers codex and copilot login subcommands", () => {

@@ -3,7 +3,7 @@ import {
   buildAuthorizeUrl,
   exchangeCodeForTokens,
   parseOAuthRedirect
-} from "../../../../src/providers/codex/oauth";
+} from "@/providers/codex/oauth";
 
 describe("codex oauth", () => {
   test("builds authorize url with codex oauth params", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { resolveCopilotLabelFromGitHub } from "../../../../src/providers/copilot/identity";
+import { resolveCopilotLabelFromGitHub } from "@/providers/copilot/identity";
 
 describe("copilot identity", () => {
   test("prefers primary verified email", () => {

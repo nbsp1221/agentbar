@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { parseProviderArg } from "../../../src/cli/provider-arg";
+import { parseProviderArg } from "@/cli/provider-arg";
 
 describe("provider arg parser", () => {
   test("returns provider when value is supported", () => {
