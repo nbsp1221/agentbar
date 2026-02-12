@@ -4,6 +4,11 @@ import { renderAsciiTable } from "./ascii-table";
 import { dim } from "./ansi";
 import { formatNoteCell } from "./text";
 
+const USAGE_TABLE_STYLE = {
+  head: ["cyan"],
+  border: ["grey"]
+} as const;
+
 export function formatEtaShort(resetAtMs?: number): string {
   if (!resetAtMs) {
     return "-";
@@ -85,7 +90,7 @@ function formatCodexSection(rows: CodexUsageRow[]): string {
     row.error ?? "ok",
     formatNoteCell(row.note, 24)
   ]);
-  return ["Codex Usage", renderAsciiTable({ head: header, rows: body })].join("\n");
+  return ["Codex Usage", renderAsciiTable({ head: header, rows: body, style: USAGE_TABLE_STYLE })].join("\n");
 }
 
 function pickMetric(row: CopilotUsageRow, label: CopilotUsageMetric["label"]): CopilotUsageMetric | undefined {
@@ -107,7 +112,7 @@ function formatCopilotSection(rows: CopilotUsageRow[]): string {
       formatNoteCell(row.note, 24)
     ];
   });
-  return ["Copilot Usage", renderAsciiTable({ head: header, rows: body })].join("\n");
+  return ["Copilot Usage", renderAsciiTable({ head: header, rows: body, style: USAGE_TABLE_STYLE })].join("\n");
 }
 
 export function formatUsageSections(rows: UsageRow[]): string {

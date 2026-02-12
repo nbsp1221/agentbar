@@ -2,6 +2,11 @@ import type { AccountRow } from "../../services/accounts-list";
 import { renderAsciiTable } from "./ascii-table";
 import { formatNoteCell } from "./text";
 
+const ACCOUNTS_TABLE_STYLE = {
+  head: ["cyan"],
+  border: ["grey"]
+} as const;
+
 export function formatAccounts(rows: AccountRow[]): string {
   const head = ["active", "provider", "email", "account", "id", "note"];
   const body = rows.map((row) => [
@@ -13,5 +18,5 @@ export function formatAccounts(rows: AccountRow[]): string {
     formatNoteCell(row.note, 28)
   ]);
 
-  return renderAsciiTable({ head, rows: body });
+  return renderAsciiTable({ head, rows: body, style: ACCOUNTS_TABLE_STYLE });
 }
