@@ -5,15 +5,14 @@ import { formatNoteCell } from "./text";
 const ACCOUNTS_TABLE_STYLE = {
   head: ["cyan"],
   border: ["grey"]
-} as const;
+};
 
 export function formatAccounts(rows: AccountRow[]): string {
-  const head = ["active", "provider", "email", "account", "id", "note"];
+  const head = ["active", "provider", "email", "id", "note"];
   const body = rows.map((row) => [
     row.active ? "*" : "",
     row.provider,
     row.email,
-    row.accountType ?? "-",
     row.id.length > 8 ? row.id.slice(0, 8) : row.id,
     formatNoteCell(row.note, 28)
   ]);

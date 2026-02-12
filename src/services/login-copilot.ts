@@ -2,8 +2,10 @@ import { intro, note, outro, spinner } from "@clack/prompts";
 import { randomUUID } from "node:crypto";
 import { pollForAccessToken, requestDeviceCode } from "../providers/copilot/device-flow";
 import { fetchCopilotLabel } from "../providers/copilot/identity";
+import { fetchCopilotUsageForProfile } from "../providers/copilot/usage";
 import { resolveStorePath } from "../store/paths";
 import { setActiveProfile, upsertProfile } from "../store/store";
+import { normalizePersistedPlanType } from "../utils/plan";
 
 export async function loginCopilot(): Promise<void> {
   if (!process.stdin.isTTY) {
@@ -36,19 +38,36 @@ export async function loginCopilot(): Promise<void> {
   const now = new Date().toISOString();
   const id = randomUUID();
   const storePath = resolveStorePath();
-
-  await upsertProfile(storePath, {
+  const baseProfile = {
     id,
-    provider: "copilot",
+    provider: "copilot" as const,
     email,
     createdAt: now,
     updatedAt: now,
     credentials: {
-      kind: "copilot_token",
+      kind: "copilot_token" as const,
       githubToken: token
     }
-  });
+  };
+
+  let planType: string | undefined;
+  try {
+    const usage = await fetchCopilotUsageForProfile(baseProfile);
+    planType = normalizePersistedPlanType(usage.snapshot?.planType);
+  } catch {
+    // Ignore usage fetch failures during login. Credentials are already valid.
+  }
+
+  await upsertProfile(
+    storePath,
+    planType
+      ? {
+          ...baseProfile,
+          planType
+        }
+      : baseProfile
+  );
 
   await setActiveProfile(storePath, "copilot", id);
-  outro(`Saved Copilot profile: ${email}`);
+  outro(`Saved Copilot profile: ${email}${planType ? ` (${planType})` : ""}`);
 }

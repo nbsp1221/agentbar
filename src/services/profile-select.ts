@@ -1,17 +1,19 @@
 import { select } from "@clack/prompts";
-import type { AccountType, AuthProfile } from "../store/types";
+import type { AuthProfile } from "../store/types";
 import { normalizeEmailSelector } from "../utils/string-normalize";
+import { normalizePlanSelector } from "../utils/plan";
 
 export function filterProfilesByEmail<T extends AuthProfile>(
   candidates: T[],
-  selector: { email: string; accountType?: AccountType }
+  selector: { email: string; plan?: string }
 ): T[] {
   const email = normalizeEmailSelector(selector.email);
   const byEmail = candidates.filter((c) => normalizeEmailSelector(c.email) === email);
-  if (!selector.accountType) {
+  const normalizedPlan = normalizePlanSelector(selector.plan);
+  if (!normalizedPlan) {
     return byEmail;
   }
-  return byEmail.filter((c) => c.accountType === selector.accountType);
+  return byEmail.filter((c) => normalizePlanSelector(c.planType) === normalizedPlan);
 }
 
 export async function promptSelectProfile<T extends AuthProfile>(message: string, candidates: T[]): Promise<T> {
@@ -19,7 +21,7 @@ export async function promptSelectProfile<T extends AuthProfile>(message: string
     message,
     options: candidates.map((c) => ({
       value: c.id,
-      label: `${c.email} (${c.accountType ?? "-"})`,
+      label: c.planType ? `${c.email} (${c.planType})` : c.email,
       hint: c.id
     }))
   });
@@ -34,4 +36,3 @@ export async function promptSelectProfile<T extends AuthProfile>(message: string
   }
   return picked;
 }
-

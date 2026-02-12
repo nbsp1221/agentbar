@@ -21,7 +21,6 @@ describe("cli usage renderer", () => {
       {
         provider: "codex",
         email: "alice@example.com",
-        accountType: "personal",
         planType: "plus",
         note: "line1\nline2 line3",
         primaryLabel: "5h",

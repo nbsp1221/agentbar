@@ -31,7 +31,6 @@ export const codexUsageCollector: UsageCollector = {
         row: {
           provider: "codex",
           email: profile.email,
-          accountType: profile.accountType,
           planType: result.snapshot.planType,
           note: profile.note,
           primaryLabel: codexWindowLabel(result.snapshot.primaryWindowSeconds, "primary"),
@@ -49,7 +48,6 @@ export const codexUsageCollector: UsageCollector = {
       row: {
         provider: "codex",
         email: profile.email,
-        accountType: profile.accountType,
         planType: "unknown",
         note: profile.note,
         primaryLabel: "5h",

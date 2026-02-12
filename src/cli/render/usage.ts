@@ -7,7 +7,7 @@ import { formatNoteCell } from "./text";
 const USAGE_TABLE_STYLE = {
   head: ["cyan"],
   border: ["grey"]
-} as const;
+};
 
 export function formatEtaShort(resetAtMs?: number): string {
   if (!resetAtMs) {
@@ -80,10 +80,9 @@ function formatRemainingLimit(metric?: CopilotUsageMetric): string {
 }
 
 function formatCodexSection(rows: CodexUsageRow[]): string {
-  const header = ["email", "account", "plan", "5h left", "weekly left", "status", "note"];
+  const header = ["email", "plan", "5h left", "weekly left", "status", "note"];
   const body = rows.map((row) => [
     row.email,
-    row.accountType ?? "-",
     row.planType,
     formatRemainingWithEta(row.primaryUsedPercent, row.primaryResetAtMs),
     formatRemainingWithEta(row.secondaryUsedPercent, row.secondaryResetAtMs),

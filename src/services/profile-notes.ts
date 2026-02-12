@@ -1,9 +1,9 @@
 import { intro, outro, text } from "@clack/prompts";
 import { resolveStorePath } from "../store/paths";
 import { readStore, updateStoreWithLock } from "../store/store";
-import type { AccountType, AuthProfile, Provider } from "../store/types";
+import type { AuthProfile, Provider } from "../store/types";
 import { filterProfilesByEmail, promptSelectProfile } from "./profile-select";
-import { normalizeAccountType } from "../utils/account-type";
+import { formatAmbiguousProfileCandidates } from "../utils/profile-candidate";
 
 type NoteTarget = AuthProfile & { id: string; provider: Provider };
 
@@ -46,10 +46,10 @@ function normalizeNoteInput(value: string): string {
 export async function setProfileNote(params: {
   provider: Provider;
   email?: string;
-  account?: string;
+  plan?: string;
   note?: string;
   outputJson?: boolean;
-}): Promise<{ id: string; provider: Provider; email: string; accountType?: string; note?: string }> {
+}): Promise<{ id: string; provider: Provider; email: string; note?: string }> {
   const storePath = resolveStorePath();
   const store = await readStore(storePath);
 
@@ -58,26 +58,16 @@ export async function setProfileNote(params: {
     throw new Error(`No ${params.provider} profiles found`);
   }
 
-  if (params.provider !== "codex" && params.account) {
-    throw new Error("--account is only supported for codex");
-  }
-
   let target: NoteTarget;
   if (params.email) {
-    const matches =
-      params.provider === "codex"
-        ? filterProfilesByEmail(profiles, { email: params.email, accountType: normalizeAccountType(params.account) })
-        : filterProfilesByEmail(profiles, { email: params.email });
+    const matches = filterProfilesByEmail(profiles, { email: params.email, plan: params.plan });
 
     if (matches.length === 0) {
       throw new Error(`No matching ${params.provider} profile found`);
     }
     if (matches.length > 1) {
       if (!process.stdin.isTTY) {
-        const hints =
-          params.provider === "codex"
-            ? matches.map((m) => `${m.id} (${m.accountType ?? "-"})`).join(", ")
-            : matches.map((m) => m.id).join(", ");
+        const hints = formatAmbiguousProfileCandidates(matches);
         throw new Error(`Ambiguous selector. Candidates: ${hints}`);
       }
       target = await promptSelectProfile(`Select ${params.provider} account`, matches);
@@ -107,14 +97,13 @@ export async function setProfileNote(params: {
   const updated = await updateNote(target.id, normalized);
 
   if (!params.outputJson) {
-    outro(`Saved note: ${updated.email} (${updated.accountType ?? "-"})`);
+    outro(`Saved note: ${updated.email}`);
   }
 
   return {
     id: updated.id,
     provider: updated.provider,
     email: updated.email,
-    accountType: updated.accountType,
     note: updated.note
   };
 }
@@ -122,9 +111,9 @@ export async function setProfileNote(params: {
 export async function clearProfileNote(params: {
   provider: Provider;
   email?: string;
-  account?: string;
+  plan?: string;
   outputJson?: boolean;
-}): Promise<{ id: string; provider: Provider; email: string; accountType?: string }> {
+}): Promise<{ id: string; provider: Provider; email: string }> {
   const storePath = resolveStorePath();
   const store = await readStore(storePath);
 
@@ -133,22 +122,18 @@ export async function clearProfileNote(params: {
     throw new Error(`No ${params.provider} profiles found`);
   }
 
-  if (params.provider !== "codex" && params.account) {
-    throw new Error("--account is only supported for codex");
-  }
-
   let target: NoteTarget;
   if (params.email) {
-    const matches =
-      params.provider === "codex"
-        ? filterProfilesByEmail(profiles, { email: params.email, accountType: normalizeAccountType(params.account) })
-        : filterProfilesByEmail(profiles, { email: params.email });
+    const matches = filterProfilesByEmail(profiles, { email: params.email, plan: params.plan });
 
     if (matches.length === 0) {
       throw new Error(`No matching ${params.provider} profile found`);
     }
     if (matches.length > 1) {
-      ensureInteractiveIfMissing("Ambiguous selector. Provide --account or use interactive mode.");
+      if (!process.stdin.isTTY) {
+        const hints = formatAmbiguousProfileCandidates(matches);
+        throw new Error(`Ambiguous selector. Candidates: ${hints}`);
+      }
       target = await promptSelectProfile(`Select ${params.provider} account`, matches);
     } else {
       target = matches[0]!;
@@ -161,13 +146,12 @@ export async function clearProfileNote(params: {
 
   const updated = await updateNote(target.id, undefined);
   if (!params.outputJson) {
-    outro(`Cleared note: ${updated.email} (${updated.accountType ?? "-"})`);
+    outro(`Cleared note: ${updated.email}`);
   }
 
   return {
     id: updated.id,
     provider: updated.provider,
-    email: updated.email,
-    accountType: updated.accountType
+    email: updated.email
   };
 }

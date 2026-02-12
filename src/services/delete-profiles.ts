@@ -2,14 +2,13 @@ import { confirm, outro } from "@clack/prompts";
 import { filterProfilesByEmail, promptSelectProfile } from "./profile-select";
 import { resolveStorePath } from "../store/paths";
 import { readStore, updateStoreWithLock } from "../store/store";
-import type { AccountType, AuthProfile } from "../store/types";
-import { normalizeAccountType } from "../utils/account-type";
+import type { AuthProfile } from "../store/types";
+import { formatAmbiguousProfileCandidates } from "../utils/profile-candidate";
 
 type DeleteResult = {
   id: string;
   provider: AuthProfile["provider"];
   email: string;
-  accountType?: AccountType;
   wasActive: boolean;
 };
 
@@ -44,7 +43,6 @@ async function deleteProfileById(profileId: string): Promise<DeleteResult> {
     id: deleted.id,
     provider: deleted.provider,
     email: deleted.email,
-    accountType: deleted.accountType,
     wasActive
   };
 }
@@ -66,7 +64,7 @@ async function requireYesOrConfirm(params: { yes?: boolean; message: string }): 
 
 export async function deleteCodexProfile(params: {
   email?: string;
-  account?: string;
+  plan?: string;
   yes?: boolean;
   outputJson?: boolean;
 }): Promise<DeleteResult> {
@@ -83,10 +81,7 @@ export async function deleteCodexProfile(params: {
 
   let target: AuthProfile;
   if (params.email) {
-    const matches = filterProfilesByEmail(codexProfiles, {
-      email: params.email,
-      accountType: normalizeAccountType(params.account)
-    });
+    const matches = filterProfilesByEmail(codexProfiles, { email: params.email, plan: params.plan });
 
     if (matches.length === 0) {
       throw new Error("No matching Codex profile found");
@@ -94,7 +89,7 @@ export async function deleteCodexProfile(params: {
 
     if (matches.length > 1) {
       if (!process.stdin.isTTY) {
-        const hints = matches.map((m) => `${m.id} (${m.accountType ?? "-"})`).join(", ");
+        const hints = formatAmbiguousProfileCandidates(matches);
         throw new Error(`Ambiguous Codex selector. Candidates: ${hints}`);
       }
       target = await promptSelectProfile("Select Codex account to delete", matches);
@@ -110,18 +105,19 @@ export async function deleteCodexProfile(params: {
 
   await requireYesOrConfirm({
     yes: params.yes,
-    message: `Delete Codex profile ${target.email} (${target.accountType ?? "-"})?`
+    message: `Delete Codex profile ${target.email}?`
   });
 
   const result = await deleteProfileById(target.id);
   if (!params.outputJson) {
-    outro(`Deleted Codex: ${result.email} (${result.accountType ?? "-"})`);
+    outro(`Deleted Codex: ${result.email}`);
   }
   return result;
 }
 
 export async function deleteCopilotProfile(params: {
   email?: string;
+  plan?: string;
   yes?: boolean;
   outputJson?: boolean;
 }): Promise<DeleteResult> {
@@ -138,13 +134,13 @@ export async function deleteCopilotProfile(params: {
 
   let target: AuthProfile;
   if (params.email) {
-    const matches = filterProfilesByEmail(copilotProfiles, { email: params.email });
+    const matches = filterProfilesByEmail(copilotProfiles, { email: params.email, plan: params.plan });
     if (matches.length === 0) {
       throw new Error("No matching Copilot profile found");
     }
     if (matches.length > 1) {
       if (!process.stdin.isTTY) {
-        const hints = matches.map((m) => m.id).join(", ");
+        const hints = formatAmbiguousProfileCandidates(matches);
         throw new Error(`Ambiguous Copilot selector. Candidates: ${hints}`);
       }
       target = await promptSelectProfile("Select Copilot account to delete", matches);

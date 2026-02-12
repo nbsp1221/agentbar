@@ -2,10 +2,6 @@
 
 `agentbar` is a CLI for managing multiple AI account credentials and checking usage in one place.
 
-MVP supports:
-- **Codex**: login, account switching, usage
-- **Copilot**: login, usage
-
 The goal is to reduce re-login friction when you work across multiple accounts.
 
 ## Status
@@ -21,11 +17,11 @@ Early-stage MVP. Core flows are implemented and tested, but APIs and UX may stil
 - Account listing:
   - `accounts [provider] [--json]`
 - Account deletion:
-  - `delete codex [email] [--account personal|business|team] [--yes] [--json]`
-  - `delete copilot [email] [--yes] [--json]`
+  - `delete codex [email] [--plan plus|team|...] [--yes] [--json]`
+  - `delete copilot [email] [--plan individual|business|...] [--yes] [--json]`
 - Codex account switching:
   - Interactive: `switch codex`
-  - Non-interactive: `switch codex <email> --account personal|business|team`
+  - Non-interactive: `switch codex <email> [--plan plus|team|...]`
 - Usage aggregation:
   - `usage [provider] [--provider codex|copilot] [--refresh] [--json]`
 - Profile notes:
@@ -91,19 +87,26 @@ agentbar accounts codex
 Delete a saved account:
 
 ```bash
-agentbar delete codex alice@example.com --account personal --yes
+agentbar delete codex alice@example.com --yes
 agentbar delete copilot alice@example.com --yes
+
+# when same email has multiple Codex plans
+agentbar delete codex alice@example.com --plan team --yes
+# when same email has multiple Copilot plans
+agentbar delete copilot alice@example.com --plan business --yes
 ```
 
 Add a note to a profile:
 
 ```bash
-agentbar note set codex alice@example.com --account personal "Work account"
+agentbar note set codex alice@example.com "Work account"
 agentbar note set copilot alice@example.com "Monthly quota"
+
+# when same email has multiple profiles
+agentbar note set codex alice@example.com --plan plus "Personal"
 ```
 
 If you omit selectors or note text, `agentbar` will switch to interactive prompts (TTY only).
-`--account` is only supported for Codex profiles.
 
 Switch active Codex account:
 
@@ -112,8 +115,10 @@ Switch active Codex account:
 agentbar switch codex
 
 # non-interactive
-agentbar switch codex alice@example.com --account personal
-agentbar switch codex alice@example.com --account business
+agentbar switch codex alice@example.com
+
+# disambiguate same-email profiles by plan
+agentbar switch codex alice@example.com --plan team
 ```
 
 Check usage:
@@ -137,12 +142,12 @@ agentbar usage --provider codex --json
 agentbar login codex
 agentbar login copilot
 agentbar accounts [provider] [--json]
-agentbar switch codex [email] [--account personal|business|team] [--json]
-agentbar delete codex [email] [--account personal|business|team] [--yes] [--json]
-agentbar delete copilot [email] [--yes] [--json]
+agentbar switch codex [email] [--plan plus|team|...] [--json]
+agentbar delete codex [email] [--plan plus|team|...] [--yes] [--json]
+agentbar delete copilot [email] [--plan individual|business|...] [--yes] [--json]
 agentbar usage [provider] [--provider codex|copilot] [--refresh] [--json]
-agentbar note set <provider> [email] [note...] [--account personal|business|team] [--json]
-agentbar note clear <provider> [email] [--account personal|business|team] [--json]
+agentbar note set <provider> [email] [note...] [--plan <provider-plan>] [--json]
+agentbar note clear <provider> [email] [--plan <provider-plan>] [--json]
 ```
 
 ## Storage & Security

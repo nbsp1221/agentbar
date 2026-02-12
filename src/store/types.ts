@@ -1,5 +1,4 @@
 export type Provider = "codex" | "copilot";
-export type AccountType = "personal" | "business";
 
 export type CodexOAuthCredentials = {
   kind: "codex_oauth";
@@ -25,7 +24,7 @@ export type AuthProfile = {
   id: string;
   provider: Provider;
   email: string;
-  accountType?: AccountType;
+  planType?: string;
   note?: string;
   createdAt: string;
   updatedAt: string;

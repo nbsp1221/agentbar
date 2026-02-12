@@ -12,7 +12,7 @@ import { formatAccounts } from "@/cli/render/accounts";
 
 describe("cli accounts renderer table style", () => {
   test("passes ccusage-like header and border colors for accounts table", () => {
-    formatAccounts([{ provider: "codex", email: "a@b.com", accountType: "personal", id: "1", active: true, note: "" }]);
+    formatAccounts([{ provider: "codex", email: "a@b.com", id: "1", active: true, note: "" }]);
 
     expect(renderAsciiTableMock).toHaveBeenCalledTimes(1);
     expect(renderAsciiTableMock).toHaveBeenCalledWith(

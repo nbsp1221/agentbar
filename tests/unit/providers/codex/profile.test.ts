@@ -1,28 +1,7 @@
 import { describe, expect, test } from "vitest";
-import { inferCodexAccountId, inferCodexAccountType, inferCodexEmail } from "@/providers/codex/profile";
+import { inferCodexAccountId, inferCodexEmail, inferCodexPlanType } from "@/providers/codex/profile";
 
 describe("codex profile inference", () => {
-  test("infers business from team-style claim", () => {
-    const accountType = inferCodexAccountType({
-      accessPayload: {
-        "https://api.openai.com/auth": {
-          chatgpt_account_type: "team"
-        }
-      }
-    });
-
-    expect(accountType).toBe("business");
-  });
-
-  test("falls back to personal when claims do not include account type", () => {
-    const accountType = inferCodexAccountType({
-      accessPayload: {},
-      idPayload: {}
-    });
-
-    expect(accountType).toBe("personal");
-  });
-
   test("extracts account id from namespaced auth claim", () => {
     const accountId = inferCodexAccountId({
       accessPayload: {
@@ -44,16 +23,25 @@ describe("codex profile inference", () => {
 
     expect(email).toBe("a@b.com");
   });
-});
 
-test("infers business from chatgpt_plan_type=team", () => {
-  const accountType = inferCodexAccountType({
-    idPayload: {
-      "https://api.openai.com/auth": {
-        chatgpt_plan_type: "team"
+  test("extracts plan type from namespaced auth claims", () => {
+    const planType = inferCodexPlanType({
+      accessPayload: {
+        "https://api.openai.com/auth": {
+          chatgpt_plan_type: "Team "
+        }
       }
-    }
+    });
+
+    expect(planType).toBe("team");
   });
 
-  expect(accountType).toBe("business");
+  test("returns undefined when no plan claim exists", () => {
+    const planType = inferCodexPlanType({
+      accessPayload: {},
+      idPayload: {}
+    });
+
+    expect(planType).toBeUndefined();
+  });
 });

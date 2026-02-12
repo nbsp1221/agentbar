@@ -4,31 +4,33 @@ import { ensureFreshCodexProfile } from "../providers/codex/refresh";
 import { promptSelectProfile } from "./profile-select";
 import { resolveStorePath } from "../store/paths";
 import { readStore, setActiveProfile, upsertProfile } from "../store/store";
-import type { AccountType, AuthProfile } from "../store/types";
-import { normalizeAccountType } from "../utils/account-type";
+import type { AuthProfile } from "../store/types";
 import { normalizeEmailSelector } from "../utils/string-normalize";
+import { normalizePlanSelector } from "../utils/plan";
+import { formatAmbiguousProfileCandidates } from "../utils/profile-candidate";
 
 type SwitchTarget = {
   id: string;
   email: string;
-  accountType?: AccountType;
+  planType?: string;
 };
 
 export function resolveCodexSwitchTarget(
   candidates: SwitchTarget[],
-  selector: { email: string; accountType?: AccountType }
+  selector: { email: string; plan?: string }
 ): SwitchTarget {
   const email = normalizeEmailSelector(selector.email);
   const filteredByEmail = candidates.filter((c) => normalizeEmailSelector(c.email) === email);
-  const filtered = selector.accountType
-    ? filteredByEmail.filter((c) => c.accountType === selector.accountType)
+  const normalizedPlan = normalizePlanSelector(selector.plan);
+  const filtered = normalizedPlan
+    ? filteredByEmail.filter((c) => normalizePlanSelector(c.planType) === normalizedPlan)
     : filteredByEmail;
 
   if (filtered.length === 0) {
     throw new Error("No matching Codex profile found");
   }
   if (filtered.length > 1) {
-    const hints = filtered.map((f) => `${f.id} (${f.accountType ?? "-"})`).join(", ");
+    const hints = formatAmbiguousProfileCandidates(filtered);
     throw new Error(`Ambiguous Codex selector. Candidates: ${hints}`);
   }
   return filtered[0]!;
@@ -36,9 +38,9 @@ export function resolveCodexSwitchTarget(
 
 export async function switchCodex(params: {
   email?: string;
-  account?: string;
+  plan?: string;
   outputJson?: boolean;
-}): Promise<{ id: string; email: string; accountType?: string; authPath: string }> {
+}): Promise<{ id: string; email: string; planType?: string; authPath: string }> {
   const storePath = resolveStorePath();
   const store = await readStore(storePath);
   const codexProfiles = store.profiles.filter(
@@ -56,11 +58,11 @@ export async function switchCodex(params: {
       codexProfiles.map((p) => ({
         id: p.id,
         email: p.email,
-        accountType: p.accountType
+        planType: p.planType
       })),
       {
         email: params.email,
-        accountType: normalizeAccountType(params.account)
+        plan: params.plan
       }
     );
     target = codexProfiles.find((p) => p.id === selected.id)!;
@@ -83,13 +85,13 @@ export async function switchCodex(params: {
   const authPath = writeCodexAuthFromProfile(effectiveTarget);
 
   if (!params.outputJson) {
-    outro(`Switched Codex: ${effectiveTarget.email} (${effectiveTarget.accountType ?? "-"})`);
+    outro(`Switched Codex: ${effectiveTarget.email}`);
   }
 
   return {
     id: effectiveTarget.id,
     email: effectiveTarget.email,
-    accountType: effectiveTarget.accountType,
+    planType: effectiveTarget.planType,
     authPath
   };
 }

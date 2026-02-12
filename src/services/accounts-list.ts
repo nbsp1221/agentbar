@@ -5,7 +5,6 @@ export type AccountRow = {
   id: string;
   provider: Provider;
   email: string;
-  accountType?: string;
   note?: string;
   active: boolean;
 };
@@ -20,7 +19,6 @@ export async function listAccounts(options?: {
       id: p.id,
       provider: p.provider,
       email: p.email,
-      accountType: p.accountType,
       note: p.note,
       active: store.active[p.provider] === p.id
     }));

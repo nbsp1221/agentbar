@@ -48,12 +48,12 @@ export function buildProgram(): Command {
     .command("codex")
     .description("Switch active Codex account and apply to Codex auth.json")
     .argument("[email]", "Email selector")
-    .option("--account <type>", "Account type selector: personal|business|team")
+    .option("--plan <plan>", "Plan selector for same-email Codex profiles (e.g. plus, team)")
     .option("--json", "Print JSON output")
-    .action(async (email?: string, cmdOpts?: { account?: string; json?: boolean }) => {
+    .action(async (email?: string, cmdOpts?: { plan?: string; json?: boolean }) => {
       const result = await switchCodex({
         email,
-        account: cmdOpts?.account,
+        plan: cmdOpts?.plan,
         outputJson: Boolean(cmdOpts?.json)
       });
       if (cmdOpts?.json) {
@@ -66,13 +66,13 @@ export function buildProgram(): Command {
     .command("codex")
     .description("Delete a stored Codex profile")
     .argument("[email]", "Email selector")
-    .option("--account <type>", "Account type selector: personal|business|team")
+    .option("--plan <plan>", "Plan selector for same-email Codex profiles (e.g. plus, team)")
     .option("-y, --yes", "Skip confirmation prompt (required for non-interactive runs)")
     .option("--json", "Print JSON output")
-    .action(async (email?: string, cmdOpts?: { account?: string; yes?: boolean; json?: boolean }) => {
+    .action(async (email?: string, cmdOpts?: { plan?: string; yes?: boolean; json?: boolean }) => {
       const result = await deleteCodexProfile({
         email,
-        account: cmdOpts?.account,
+        plan: cmdOpts?.plan,
         yes: Boolean(cmdOpts?.yes),
         outputJson: Boolean(cmdOpts?.json)
       });
@@ -84,11 +84,13 @@ export function buildProgram(): Command {
     .command("copilot")
     .description("Delete a stored Copilot profile")
     .argument("[email]", "Email selector")
+    .option("--plan <plan>", "Plan selector for same-email Copilot profiles (e.g. individual, business)")
     .option("-y, --yes", "Skip confirmation prompt (required for non-interactive runs)")
     .option("--json", "Print JSON output")
-    .action(async (email?: string, cmdOpts?: { yes?: boolean; json?: boolean }) => {
+    .action(async (email?: string, cmdOpts?: { plan?: string; yes?: boolean; json?: boolean }) => {
       const result = await deleteCopilotProfile({
         email,
+        plan: cmdOpts?.plan,
         yes: Boolean(cmdOpts?.yes),
         outputJson: Boolean(cmdOpts?.json)
       });
@@ -125,15 +127,15 @@ export function buildProgram(): Command {
     .argument("<provider>", "Provider (codex|copilot)")
     .argument("[email]", "Email selector")
     .argument("[note...]", "Note text")
-    .option("--account <type>", "Account type selector for codex: personal|business|team")
+    .option("--plan <plan>", "Plan selector for same-email profiles")
     .option("--json", "Print JSON output")
-    .action(async (providerArg: string, email?: string, noteParts?: string[], cmdOpts?: { account?: string; json?: boolean }) => {
+    .action(async (providerArg: string, email?: string, noteParts?: string[], cmdOpts?: { plan?: string; json?: boolean }) => {
       const provider = requireProvider(parseProviderArg(providerArg), providerArg);
       const note = Array.isArray(noteParts) && noteParts.length > 0 ? noteParts.join(" ") : undefined;
       const result = await setProfileNote({
         provider,
         email,
-        account: cmdOpts?.account,
+        plan: cmdOpts?.plan,
         note,
         outputJson: Boolean(cmdOpts?.json)
       });
@@ -147,14 +149,14 @@ export function buildProgram(): Command {
     .description("Clear a note from a stored profile")
     .argument("<provider>", "Provider (codex|copilot)")
     .argument("[email]", "Email selector")
-    .option("--account <type>", "Account type selector for codex: personal|business|team")
+    .option("--plan <plan>", "Plan selector for same-email profiles")
     .option("--json", "Print JSON output")
-    .action(async (providerArg: string, email?: string, cmdOpts?: { account?: string; json?: boolean }) => {
+    .action(async (providerArg: string, email?: string, cmdOpts?: { plan?: string; json?: boolean }) => {
       const provider = requireProvider(parseProviderArg(providerArg), providerArg);
       const result = await clearProfileNote({
         provider,
         email,
-        account: cmdOpts?.account,
+        plan: cmdOpts?.plan,
         outputJson: Boolean(cmdOpts?.json)
       });
       if (cmdOpts?.json) {

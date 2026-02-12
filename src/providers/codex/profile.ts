@@ -1,4 +1,4 @@
-import type { AccountType } from "../../store/types";
+import { normalizePlanSelector } from "../../utils/plan";
 
 const OPENAI_AUTH_CLAIM = "https://api.openai.com/auth";
 const OPENAI_PROFILE_CLAIM = "https://api.openai.com/profile";
@@ -10,79 +10,32 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value as Record<string, unknown>;
 }
 
-function normalizeCodexAccountType(value: unknown): AccountType | undefined {
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  if (!normalized) {
-    return undefined;
-  }
-
-  if (
-    normalized.includes("business") ||
-    normalized.includes("team") ||
-    normalized.includes("enterprise") ||
-    normalized.includes("workspace")
-  ) {
-    return "business";
-  }
-
-  if (
-    normalized.includes("personal") ||
-    normalized.includes("plus") ||
-    normalized.includes("pro") ||
-    normalized.includes("free") ||
-    normalized.includes("individual")
-  ) {
-    return "personal";
-  }
-
-  return undefined;
-}
-
-export function inferCodexAccountType(params: {
+export function inferCodexPlanType(params: {
   idPayload?: Record<string, unknown> | null;
   accessPayload?: Record<string, unknown> | null;
-}): AccountType {
-  const candidates: unknown[] = [];
-
+}): string | undefined {
   const accessAuth = asRecord(params.accessPayload?.[OPENAI_AUTH_CLAIM]);
   const idAuth = asRecord(params.idPayload?.[OPENAI_AUTH_CLAIM]);
 
-  candidates.push(
-    accessAuth?.chatgpt_account_type,
-    accessAuth?.account_type,
-    accessAuth?.workspace_type,
-    // Some tokens expose only plan-type, not explicit account-type. We treat team/workspace plans as business.
+  const candidates: unknown[] = [
     accessAuth?.chatgpt_plan_type,
     accessAuth?.plan_type,
-    params.accessPayload?.chatgpt_account_type,
-    params.accessPayload?.account_type,
-    params.accessPayload?.workspace_type,
     params.accessPayload?.chatgpt_plan_type,
     params.accessPayload?.plan_type,
-    idAuth?.chatgpt_account_type,
-    idAuth?.account_type,
-    idAuth?.workspace_type,
     idAuth?.chatgpt_plan_type,
     idAuth?.plan_type,
-    params.idPayload?.chatgpt_account_type,
-    params.idPayload?.account_type,
-    params.idPayload?.workspace_type,
     params.idPayload?.chatgpt_plan_type,
     params.idPayload?.plan_type
-  );
+  ];
 
   for (const candidate of candidates) {
-    const inferred = normalizeCodexAccountType(candidate);
-    if (inferred) {
-      return inferred;
+    const plan = normalizePlanSelector(candidate);
+    if (plan) {
+      return plan;
     }
   }
 
-  return "personal";
+  return undefined;
 }
 
 export function inferCodexEmail(params: {

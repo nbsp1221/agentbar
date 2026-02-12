@@ -13,7 +13,6 @@ export const copilotUsageCollector: UsageCollector = {
         row: {
           provider: "copilot",
           email: profile.email,
-          accountType: profile.accountType,
           planType: result.snapshot.planType,
           note: profile.note,
           metrics: result.snapshot.metrics,
@@ -26,7 +25,6 @@ export const copilotUsageCollector: UsageCollector = {
       row: {
         provider: "copilot",
         email: profile.email,
-        accountType: profile.accountType,
         planType: "unknown",
         note: profile.note,
         metrics: [],

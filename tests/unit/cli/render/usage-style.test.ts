@@ -11,12 +11,11 @@ vi.mock("@/cli/render/ascii-table", () => ({
 import { formatUsageSections } from "@/cli/render/usage";
 
 describe("cli usage renderer table style", () => {
-  test("passes ccusage-like header and border colors for usage tables", () => {
+  test("passes ccusage-like style and codex header shape for usage tables", () => {
     formatUsageSections([
       {
         provider: "codex",
         email: "alice@example.com",
-        accountType: "personal",
         planType: "plus",
         note: "",
         primaryLabel: "5h",
@@ -31,6 +30,7 @@ describe("cli usage renderer table style", () => {
     expect(renderAsciiTableMock).toHaveBeenCalledTimes(1);
     expect(renderAsciiTableMock).toHaveBeenCalledWith(
       expect.objectContaining({
+        head: ["email", "plan", "5h left", "weekly left", "status", "note"],
         style: {
           head: ["cyan"],
           border: ["grey"]

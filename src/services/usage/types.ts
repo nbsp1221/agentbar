@@ -13,7 +13,6 @@ export type CopilotUsageMetric = {
 type UsageRowBase = {
   provider: Provider;
   email: string;
-  accountType?: string;
   planType: string;
   note?: string;
   error?: string;

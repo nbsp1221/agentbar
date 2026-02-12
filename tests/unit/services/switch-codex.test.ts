@@ -1,21 +1,25 @@
 import { describe, expect, test } from "vitest";
 import { resolveCodexSwitchTarget } from "@/services/switch-codex";
-import { normalizeAccountType } from "@/utils/account-type";
 
 describe("switch codex selector", () => {
-  test("normalizes team alias to business", () => {
-    expect(normalizeAccountType("team")).toBe("business");
-  });
-
   test("fails deterministically on ambiguous email match", () => {
     expect(() =>
       resolveCodexSwitchTarget(
-        [
-          { id: "1", email: "a@b.com", accountType: "personal" },
-          { id: "2", email: "a@b.com", accountType: "business" }
-        ],
+        [{ id: "1", email: "a@b.com" }, { id: "2", email: "a@b.com" }],
         { email: "a@b.com" }
       )
     ).toThrow("Ambiguous");
+  });
+
+  test("selects the matching profile when plan is provided", () => {
+    const selected = resolveCodexSwitchTarget(
+      [
+        { id: "1", email: "a@b.com", planType: "plus" },
+        { id: "2", email: "a@b.com", planType: "team" }
+      ],
+      { email: "a@b.com", plan: "team" }
+    );
+
+    expect(selected.id).toBe("2");
   });
 });

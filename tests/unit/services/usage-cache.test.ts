@@ -73,7 +73,7 @@ describe("usage TTL cache", () => {
     expect((rows[0] as any).planType).toBe("cached");
   });
 
-  test("overrides cached note/email/accountType from the current store profile", async () => {
+  test("overrides cached note/email and drops legacy unknown fields from usage rows", async () => {
     const homeDir = path.join(tmpdir(), `agentbar-home-${Date.now()}-${Math.random().toString(16).slice(2)}`);
     process.env.HOME = homeDir;
 
@@ -85,7 +85,6 @@ describe("usage TTL cache", () => {
           id: "p1",
           provider: "codex",
           email: "new@b.com",
-          accountType: "personal",
           note: "NEW NOTE",
           createdAt: "2026-02-11T00:00:00.000Z",
           updatedAt: "2026-02-11T00:00:00.000Z",
@@ -106,7 +105,7 @@ describe("usage TTL cache", () => {
           row: {
             provider: "codex",
             email: "old@b.com",
-            accountType: "business",
+            legacyField: "legacy",
             note: "OLD NOTE",
             planType: "cached",
             primaryUsedPercent: 0,
@@ -127,7 +126,7 @@ describe("usage TTL cache", () => {
 
     expect(rows).toHaveLength(1);
     expect(rows[0]?.email).toBe("new@b.com");
-    expect((rows[0] as any).accountType).toBe("personal");
+    expect("legacyField" in (rows[0] as Record<string, unknown>)).toBe(false);
     expect((rows[0] as any).note).toBe("NEW NOTE");
     expect((rows[0] as any).planType).toBe("cached");
   });
@@ -286,5 +285,49 @@ describe("usage TTL cache", () => {
     const entry = cache.entries["codex:p1"];
     expect(entry).toBeDefined();
     expect(entry.expiresAtMs).toBe(baseNow.getTime() + 10_000);
+  });
+
+  test("persists normalized planType from usage snapshots back into profile metadata", async () => {
+    const homeDir = path.join(tmpdir(), `agentbar-home-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+    process.env.HOME = homeDir;
+
+    const storePath = path.join(homeDir, ".agentbar", "store.json");
+    writeJson(storePath, {
+      version: 1,
+      profiles: [
+        {
+          id: "cp1",
+          provider: "copilot",
+          email: "same@example.com",
+          createdAt: "2026-02-11T00:00:00.000Z",
+          updatedAt: "2026-02-11T00:00:00.000Z",
+          credentials: { kind: "copilot_token", githubToken: "x" }
+        }
+      ],
+      active: {}
+    });
+
+    const fetchImpl = async (): Promise<Response> => {
+      return new Response(
+        JSON.stringify({
+          copilot_plan: "Business ",
+          quota_snapshots: {
+            premium_interactions: { percent_remaining: 80, entitlement: 300, remaining: 240 }
+          }
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    };
+
+    const rows = await collectUsage({
+      provider: "copilot",
+      refresh: true,
+      fetchImpl: fetchImpl as unknown as typeof fetch
+    });
+
+    expect(rows).toHaveLength(1);
+
+    const store = JSON.parse(readFileSync(storePath, "utf8")) as any;
+    expect(store.profiles[0]?.planType).toBe("business");
   });
 });

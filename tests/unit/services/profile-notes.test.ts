@@ -62,7 +62,7 @@ describe("profile notes", () => {
     expect(store.profiles[0].note).toBeUndefined();
   });
 
-  test("requires --account when codex same-email profiles are ambiguous in non-interactive mode", async () => {
+  test("fails when codex same-email profiles are ambiguous in non-interactive mode", async () => {
     const homeDir = path.join(tmpdir(), `agentbar-home-${Date.now()}-${Math.random().toString(16).slice(2)}`);
     process.env.HOME = homeDir;
 
@@ -74,7 +74,7 @@ describe("profile notes", () => {
           id: "c1",
           provider: "codex",
           email: "alice@example.com",
-          accountType: "personal",
+          planType: "plus",
           createdAt: "2026-02-11T00:00:00.000Z",
           updatedAt: "2026-02-11T00:00:00.000Z",
           credentials: { kind: "codex_oauth", accessToken: "x", refreshToken: "y" }
@@ -83,7 +83,7 @@ describe("profile notes", () => {
           id: "c2",
           provider: "codex",
           email: "alice@example.com",
-          accountType: "business",
+          planType: "team",
           createdAt: "2026-02-11T00:00:00.000Z",
           updatedAt: "2026-02-11T00:00:00.000Z",
           credentials: { kind: "codex_oauth", accessToken: "x", refreshToken: "y" }
@@ -106,7 +106,7 @@ describe("profile notes", () => {
     expect(store.profiles[1].note).toBeUndefined();
   });
 
-  test("rejects invalid --account values", async () => {
+  test("uses plan selector when codex same-email profiles exist in non-interactive mode", async () => {
     const homeDir = path.join(tmpdir(), `agentbar-home-${Date.now()}-${Math.random().toString(16).slice(2)}`);
     process.env.HOME = homeDir;
 
@@ -118,7 +118,16 @@ describe("profile notes", () => {
           id: "c1",
           provider: "codex",
           email: "alice@example.com",
-          accountType: "personal",
+          planType: "plus",
+          createdAt: "2026-02-11T00:00:00.000Z",
+          updatedAt: "2026-02-11T00:00:00.000Z",
+          credentials: { kind: "codex_oauth", accessToken: "x", refreshToken: "y" }
+        },
+        {
+          id: "c2",
+          provider: "codex",
+          email: "alice@example.com",
+          planType: "team",
           createdAt: "2026-02-11T00:00:00.000Z",
           updatedAt: "2026-02-11T00:00:00.000Z",
           credentials: { kind: "codex_oauth", accessToken: "x", refreshToken: "y" }
@@ -127,14 +136,63 @@ describe("profile notes", () => {
       active: {}
     });
 
-    await expect(
-      setProfileNote({
-        provider: "codex",
-        email: "alice@example.com",
-        account: "wat",
-        note: "hi",
-        outputJson: true
-      })
-    ).rejects.toThrow(/Invalid --account/i);
+    const result = await setProfileNote({
+      provider: "codex",
+      email: "alice@example.com",
+      plan: "team",
+      note: "work profile",
+      outputJson: true
+    });
+
+    expect(result.id).toBe("c2");
+
+    const store = readJson(storePath);
+    expect(store.profiles.find((p: any) => p.id === "c1")?.note).toBeUndefined();
+    expect(store.profiles.find((p: any) => p.id === "c2")?.note).toBe("work profile");
+  });
+
+  test("uses plan selector when copilot same-email profiles exist in non-interactive mode", async () => {
+    const homeDir = path.join(tmpdir(), `agentbar-home-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+    process.env.HOME = homeDir;
+
+    const storePath = path.join(homeDir, ".agentbar", "store.json");
+    writeJson(storePath, {
+      version: 1,
+      profiles: [
+        {
+          id: "p1",
+          provider: "copilot",
+          email: "same@example.com",
+          planType: "individual",
+          createdAt: "2026-02-11T00:00:00.000Z",
+          updatedAt: "2026-02-11T00:00:00.000Z",
+          credentials: { kind: "copilot_token", githubToken: "x" }
+        },
+        {
+          id: "p2",
+          provider: "copilot",
+          email: "same@example.com",
+          planType: "business",
+          createdAt: "2026-02-11T00:00:00.000Z",
+          updatedAt: "2026-02-11T00:00:00.000Z",
+          credentials: { kind: "copilot_token", githubToken: "y" }
+        }
+      ],
+      active: {}
+    });
+
+    const result = await setProfileNote({
+      provider: "copilot",
+      email: "same@example.com",
+      plan: "business",
+      note: "corp",
+      outputJson: true
+    });
+
+    expect(result.id).toBe("p2");
+
+    const store = readJson(storePath);
+    expect(store.profiles.find((p: any) => p.id === "p1")?.note).toBeUndefined();
+    expect(store.profiles.find((p: any) => p.id === "p2")?.note).toBe("corp");
   });
 });

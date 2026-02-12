@@ -7,7 +7,7 @@ import {
   exchangeCodeForTokens,
   parseOAuthRedirect
 } from "../providers/codex/oauth";
-import { inferCodexAccountId, inferCodexAccountType, inferCodexEmail } from "../providers/codex/profile";
+import { inferCodexAccountId, inferCodexEmail, inferCodexPlanType } from "../providers/codex/profile";
 import { DEFAULT_FALLBACK_TTL_MS } from "../providers/codex/refresh";
 import { resolveStorePath } from "../store/paths";
 import { setActiveProfile, upsertProfile } from "../store/store";
@@ -22,8 +22,6 @@ export function buildCodexAuthorizeOutput(url: string): {
     rawUrl: url
   };
 }
-
-export { inferCodexAccountType } from "../providers/codex/profile";
 
 export async function loginCodex(): Promise<void> {
   if (!process.stdin.isTTY) {
@@ -65,7 +63,7 @@ export async function loginCodex(): Promise<void> {
     throw new Error("Could not extract email from token; ensure email scope is granted and retry login");
   }
 
-  const accountType = inferCodexAccountType({ idPayload, accessPayload });
+  const planType = inferCodexPlanType({ idPayload, accessPayload });
   const accountId = inferCodexAccountId({ idPayload, accessPayload });
   const now = new Date().toISOString();
   const nowMs = Date.now();
@@ -82,7 +80,7 @@ export async function loginCodex(): Promise<void> {
     id,
     provider: "codex",
     email,
-    accountType,
+    planType,
     createdAt: now,
     updatedAt: now,
     credentials: {
@@ -97,5 +95,5 @@ export async function loginCodex(): Promise<void> {
   });
 
   await setActiveProfile(storePath, "codex", id);
-  outro(`Saved Codex profile: ${email} (${accountType})`);
+  outro(`Saved Codex profile: ${email}${planType ? ` (${planType})` : ""}`);
 }

@@ -7,6 +7,7 @@ import type { UsageCollector, UsageCollectorContext, UsageRow } from "./types";
 import { makeTimeoutFetch } from "../../utils/fetch-timeout";
 import { resolveUsageCachePath } from "../../cache/paths";
 import { readUsageCache, updateUsageCacheWithLock, usageCacheKey } from "../../cache/usage-cache";
+import { normalizePersistedPlanType } from "../../utils/plan";
 
 const collectors: UsageCollector[] = [codexUsageCollector, copilotUsageCollector];
 
@@ -15,14 +16,36 @@ function findCollector(profile: AuthProfile): UsageCollector | undefined {
 }
 
 function applyProfileMetadataToRow(row: UsageRow, profile: AuthProfile): UsageRow {
-  // Usage cache entries may go stale for display-only fields (email/accountType/note).
+  // Usage cache entries may go stale for display-only fields (email/note).
   // Always prefer the latest profile metadata from the store.
-  return {
-    ...row,
+  // Rebuild provider-specific rows so legacy/unknown keys are not propagated.
+  const common = {
     email: profile.email,
-    accountType: profile.accountType,
-    note: profile.note
-  } as UsageRow;
+    planType: row.planType,
+    note: profile.note,
+    error: row.error
+  } as const;
+
+  switch (row.provider) {
+    case "codex":
+      return {
+        provider: "codex",
+        ...common,
+        primaryLabel: row.primaryLabel,
+        primaryUsedPercent: row.primaryUsedPercent,
+        primaryResetAtMs: row.primaryResetAtMs,
+        secondaryLabel: row.secondaryLabel,
+        secondaryUsedPercent: row.secondaryUsedPercent,
+        secondaryResetAtMs: row.secondaryResetAtMs
+      };
+    case "copilot":
+      return {
+        provider: "copilot",
+        ...common,
+        metrics: row.metrics,
+        resetAtMs: row.resetAtMs
+      };
+  }
 }
 
 async function mapWithConcurrency<T, R>(
@@ -131,8 +154,22 @@ export async function collectUsage(options?: {
       continue;
     }
 
-    if (entry.out.updatedProfile) {
-      await upsertProfile(storePath, entry.out.updatedProfile);
+    let persistedProfile = entry.out.updatedProfile;
+    const persistedPlanType = normalizePersistedPlanType(entry.out.row.planType);
+    if (persistedPlanType) {
+      const base = persistedProfile ?? entry.profile;
+      const currentPlanType = normalizePersistedPlanType(base.planType);
+      if (currentPlanType !== persistedPlanType) {
+        persistedProfile = {
+          ...base,
+          planType: persistedPlanType,
+          updatedAt: new Date().toISOString()
+        };
+      }
+    }
+
+    if (persistedProfile) {
+      await upsertProfile(storePath, persistedProfile);
     }
 
     rows.push(entry.out.row);
