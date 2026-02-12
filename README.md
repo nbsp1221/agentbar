@@ -1,0 +1,214 @@
+# agentbar
+
+`agentbar` is a CLI for managing multiple AI account credentials and checking usage in one place.
+
+MVP supports:
+- **Codex**: login, account switching, usage
+- **Copilot**: login, usage
+
+The goal is to reduce re-login friction when you work across multiple accounts.
+
+## Status
+
+Early-stage MVP. Core flows are implemented and tested, but APIs and UX may still change.
+
+## Features (MVP)
+
+- Multi-profile auth store (`~/.agentbar/store.json`)
+- Provider login flows:
+  - `login codex` (OAuth)
+  - `login copilot` (GitHub device flow)
+- Account listing:
+  - `accounts [provider] [--json]`
+- Account deletion:
+  - `delete codex [email] [--account personal|business|team] [--yes] [--json]`
+  - `delete copilot [email] [--yes] [--json]`
+- Codex account switching:
+  - Interactive: `switch codex`
+  - Non-interactive: `switch codex <email> --account personal|business|team`
+- Usage aggregation:
+  - `usage [provider] [--provider codex|copilot] [--refresh] [--json]`
+
+## Why agentbar?
+
+If you use multiple AI coding accounts, you usually need to:
+- keep track of which account is active,
+- inspect usage/reset windows across services,
+- and manually swap auth files repeatedly.
+
+`agentbar` centralizes those tasks into one CLI workflow.
+
+## Requirements
+
+- [Bun](https://bun.sh/) `>= 1.3`
+
+## Installation
+
+### Install with Bun (recommended)
+
+```bash
+# Install from GitHub. Use a tag/commit to pin a version.
+bun add -g github:nbsp1221/agentbar#main
+agentbar --help
+```
+
+If `agentbar` is not found, add Bun global bin to your `PATH`:
+
+```bash
+# Linux/macOS
+export PATH="$HOME/.bun/bin:$PATH"
+
+# Windows (PowerShell)
+$env:Path += ";$HOME\\.bun\\bin"
+```
+
+### Install from a local path (development)
+
+```bash
+bun add -g file:/absolute/path/to/agentbar
+agentbar --help
+```
+
+## Quick Start
+
+Login:
+
+```bash
+agentbar login codex
+agentbar login copilot
+```
+
+List saved accounts:
+
+```bash
+agentbar accounts
+agentbar accounts --json
+agentbar accounts codex
+```
+
+Delete a saved account:
+
+```bash
+agentbar delete codex alice@example.com --account personal --yes
+agentbar delete copilot alice@example.com --yes
+```
+
+Switch active Codex account:
+
+```bash
+# interactive
+agentbar switch codex
+
+# non-interactive
+agentbar switch codex alice@example.com --account personal
+agentbar switch codex alice@example.com --account business
+```
+
+Check usage:
+
+```bash
+agentbar usage
+agentbar usage codex
+agentbar usage copilot
+agentbar usage --provider codex --json
+```
+
+`agentbar usage` prints provider-specific sections (Codex/Copilot) with domain-specific columns.
+
+## Disclaimer
+
+`agentbar` is not affiliated with OpenAI or GitHub.
+
+## Command Reference
+
+```text
+agentbar login codex
+agentbar login copilot
+agentbar accounts [provider] [--json]
+agentbar switch codex [email] [--account personal|business|team] [--json]
+agentbar delete codex [email] [--account personal|business|team] [--yes] [--json]
+agentbar delete copilot [email] [--yes] [--json]
+agentbar usage [provider] [--provider codex|copilot] [--refresh] [--json]
+```
+
+## Storage & Security
+
+- Auth profiles are stored in: `~/.agentbar/store.json`
+- The store is plain JSON on disk. Treat it like a password file:
+  - do not share it,
+  - do not commit it,
+  - use `agentbar delete ...` if you need to remove a profile.
+- On POSIX systems, file permissions are hardened to `0600`.
+- Store writes are protected with file locking to reduce concurrent write issues.
+- `switch codex` applies the selected profile to Codex auth at:
+  - `$CODEX_HOME/auth.json` (if `CODEX_HOME` is set), or
+  - `~/.codex/auth.json`
+
+## Configuration
+
+### Usage fetch performance
+
+`agentbar usage` calls provider APIs and can take a few seconds depending on network and how many profiles you have.
+To keep repeated runs fast, `agentbar` uses a small TTL cache:
+
+- Cache file: `~/.agentbar/usage-cache.json`
+- Bypass cache: `agentbar usage --refresh`
+
+Environment variables:
+
+- `AGENTBAR_USAGE_TIMEOUT_MS` (default: `5000`)
+  - Per-profile HTTP timeout for usage fetch.
+- `AGENTBAR_USAGE_TTL_MS` (default: `60000`)
+  - Cache TTL for successful usage rows.
+- `AGENTBAR_USAGE_ERROR_TTL_MS` (default: `10000`)
+  - Cache TTL for error usage rows (shorter by default so transient errors recover quickly).
+- `AGENTBAR_USAGE_CONCURRENCY` (default: `4`)
+  - Max number of profiles fetched concurrently.
+- `AGENTBAR_DEBUG_TIMING=1`
+  - Prints per-profile timing info to stderr (no secrets).
+- `AGENTBAR_DEBUG_STACK=1`
+  - Prints stack traces for unexpected errors.
+
+### Output colors
+
+- `NO_COLOR=1` disables ANSI colors.
+- `FORCE_COLOR=1` forces ANSI colors (useful in CI logs).
+
+## Development
+
+Install and run locally from source:
+
+```bash
+git clone https://github.com/nbsp1221/agentbar
+cd agentbar
+bun install
+bun run src/index.ts --help
+```
+
+Run tests:
+
+```bash
+bun run test
+```
+
+Run in watch mode:
+
+```bash
+bun run test:watch
+```
+
+## Roadmap
+
+- Optional CLI flags for usage timeout/TTL/concurrency (in addition to env vars)
+- Richer output formats and filters
+- Additional providers after MVP hardening
+- Release automation (tags/changelog)
+
+## Contributing
+
+Issues and PRs are welcome.  
+Before sending changes:
+
+```bash
+bun run test
+```

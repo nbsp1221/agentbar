@@ -1,0 +1,25 @@
+{
+  "name": "agentbar",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "agentbar": "./bin/agentbar"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@clack/prompts": "^1.0.0",
+    "cli-table3": "^0.6.5",
+    "commander": "^14.0.2",
+    "proper-lockfile": "^4.1.2",
+    "zod": "^4.1.11"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
