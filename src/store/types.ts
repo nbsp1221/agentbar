@@ -26,6 +26,7 @@ export type AuthProfile = {
   provider: Provider;
   email: string;
   accountType?: AccountType;
+  note?: string;
   createdAt: string;
   updatedAt: string;
   credentials: ProfileCredentials;

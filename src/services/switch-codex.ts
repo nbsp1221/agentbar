@@ -1,9 +1,11 @@
-import { outro, select } from "@clack/prompts";
+import { outro } from "@clack/prompts";
 import { writeCodexAuthFromProfile } from "../providers/codex/apply-auth";
 import { ensureFreshCodexProfile } from "../providers/codex/refresh";
+import { promptSelectProfile } from "./profile-select";
 import { resolveStorePath } from "../store/paths";
 import { readStore, setActiveProfile, upsertProfile } from "../store/store";
 import type { AccountType, AuthProfile } from "../store/types";
+import { normalizeAccountType } from "../utils/account-type";
 import { normalizeEmailSelector } from "../utils/string-normalize";
 
 type SwitchTarget = {
@@ -11,23 +13,6 @@ type SwitchTarget = {
   email: string;
   accountType?: AccountType;
 };
-
-export function normalizeAccountType(value?: string): AccountType | undefined {
-  if (!value) {
-    return undefined;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (!normalized) {
-    return undefined;
-  }
-  if (normalized === "team") {
-    return "business";
-  }
-  if (normalized === "personal" || normalized === "business") {
-    return normalized;
-  }
-  throw new Error("Invalid --account value (allowed: personal, business, team)");
-}
 
 export function resolveCodexSwitchTarget(
   candidates: SwitchTarget[],
@@ -47,27 +32,6 @@ export function resolveCodexSwitchTarget(
     throw new Error(`Ambiguous Codex selector. Candidates: ${hints}`);
   }
   return filtered[0]!;
-}
-
-async function resolveInteractiveTarget(candidates: AuthProfile[]): Promise<AuthProfile> {
-  const choice = await select({
-    message: "Select Codex account",
-    options: candidates.map((c) => ({
-      value: c.id,
-      label: `${c.email} (${c.accountType ?? "-"})`,
-      hint: c.id
-    }))
-  });
-
-  if (typeof choice !== "string") {
-    throw new Error("No Codex account selected");
-  }
-
-  const picked = candidates.find((c) => c.id === choice);
-  if (!picked) {
-    throw new Error("Selected account not found");
-  }
-  return picked;
 }
 
 export async function switchCodex(params: {
@@ -101,7 +65,7 @@ export async function switchCodex(params: {
     );
     target = codexProfiles.find((p) => p.id === selected.id)!;
   } else {
-    target = await resolveInteractiveTarget(codexProfiles);
+    target = await promptSelectProfile("Select Codex account", codexProfiles);
   }
 
   await setActiveProfile(storePath, "codex", target.id);

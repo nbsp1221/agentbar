@@ -15,6 +15,7 @@ type UsageRowBase = {
   email: string;
   accountType?: string;
   planType: string;
+  note?: string;
   error?: string;
 };
 

@@ -5,7 +5,7 @@ describe("cli program", () => {
   test("registers MVP commands", () => {
     const program = buildProgram();
     const names = program.commands.map((c) => c.name());
-    expect(names).toEqual(["login", "accounts", "switch", "delete", "usage"]);
+    expect(names).toEqual(["login", "accounts", "switch", "delete", "usage", "note"]);
   });
 
   test("usage command accepts optional provider argument", () => {

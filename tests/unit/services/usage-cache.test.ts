@@ -73,6 +73,65 @@ describe("usage TTL cache", () => {
     expect((rows[0] as any).planType).toBe("cached");
   });
 
+  test("overrides cached note/email/accountType from the current store profile", async () => {
+    const homeDir = path.join(tmpdir(), `agentbar-home-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+    process.env.HOME = homeDir;
+
+    const storePath = path.join(homeDir, ".agentbar", "store.json");
+    writeJson(storePath, {
+      version: 1,
+      profiles: [
+        {
+          id: "p1",
+          provider: "codex",
+          email: "new@b.com",
+          accountType: "personal",
+          note: "NEW NOTE",
+          createdAt: "2026-02-11T00:00:00.000Z",
+          updatedAt: "2026-02-11T00:00:00.000Z",
+          credentials: { kind: "codex_oauth", accessToken: "x", refreshToken: "y" }
+        }
+      ],
+      active: {}
+    });
+
+    const cachePath = path.join(homeDir, ".agentbar", "usage-cache.json");
+    writeJson(cachePath, {
+      version: 1,
+      entries: {
+        "codex:p1": {
+          provider: "codex",
+          profileId: "p1",
+          expiresAtMs: Date.now() + 60_000,
+          row: {
+            provider: "codex",
+            email: "old@b.com",
+            accountType: "business",
+            note: "OLD NOTE",
+            planType: "cached",
+            primaryUsedPercent: 0,
+            secondaryUsedPercent: 0
+          }
+        }
+      }
+    });
+
+    const fetchImpl = async (): Promise<Response> => {
+      throw new Error("network should not be called");
+    };
+
+    const rows = await collectUsage({
+      provider: "codex",
+      fetchImpl: fetchImpl as unknown as typeof fetch
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.email).toBe("new@b.com");
+    expect((rows[0] as any).accountType).toBe("personal");
+    expect((rows[0] as any).note).toBe("NEW NOTE");
+    expect((rows[0] as any).planType).toBe("cached");
+  });
+
   test("bypasses cache when refresh=true", async () => {
     const homeDir = path.join(tmpdir(), `agentbar-home-${Date.now()}-${Math.random().toString(16).slice(2)}`);
     process.env.HOME = homeDir;

@@ -15,6 +15,7 @@ export const copilotUsageCollector: UsageCollector = {
           email: profile.email,
           accountType: profile.accountType,
           planType: result.snapshot.planType,
+          note: profile.note,
           metrics: result.snapshot.metrics,
           resetAtMs: result.snapshot.resetAtMs
         }
@@ -27,6 +28,7 @@ export const copilotUsageCollector: UsageCollector = {
         email: profile.email,
         accountType: profile.accountType,
         planType: "unknown",
+        note: profile.note,
         metrics: [],
         error: result.error ?? "copilot_usage_error"
       }

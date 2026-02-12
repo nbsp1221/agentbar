@@ -2,6 +2,7 @@ import { formatDurationShort } from "../../utils/duration";
 import type { CopilotUsageMetric, CopilotUsageRow, CodexUsageRow, UsageRow } from "../../services/usage/types";
 import { renderAsciiTable } from "./ascii-table";
 import { dim } from "./ansi";
+import { formatNoteCell } from "./text";
 
 export function formatEtaShort(resetAtMs?: number): string {
   if (!resetAtMs) {
@@ -74,14 +75,15 @@ function formatRemainingLimit(metric?: CopilotUsageMetric): string {
 }
 
 function formatCodexSection(rows: CodexUsageRow[]): string {
-  const header = ["email", "account", "plan", "5h left", "weekly left", "status"];
+  const header = ["email", "account", "plan", "5h left", "weekly left", "status", "note"];
   const body = rows.map((row) => [
     row.email,
     row.accountType ?? "-",
     row.planType,
     formatRemainingWithEta(row.primaryUsedPercent, row.primaryResetAtMs),
     formatRemainingWithEta(row.secondaryUsedPercent, row.secondaryResetAtMs),
-    row.error ?? "ok"
+    row.error ?? "ok",
+    formatNoteCell(row.note, 24)
   ]);
   return ["Codex Usage", renderAsciiTable({ head: header, rows: body })].join("\n");
 }
@@ -93,7 +95,7 @@ function pickMetric(row: CopilotUsageRow, label: CopilotUsageMetric["label"]): C
 function formatCopilotSection(rows: CopilotUsageRow[]): string {
   // References (openclaw/CodexBar) treat Copilot's "premium" quota as the primary surface.
   // Other snapshots (chat/completions/reset) are not consistently present across plans.
-  const header = ["email", "plan", "premium left", "premium rem/limit", "status"];
+  const header = ["email", "plan", "premium left", "premium rem/limit", "status", "note"];
   const body = rows.map((row) => {
     const premium = pickMetric(row, "premium");
     return [
@@ -101,7 +103,8 @@ function formatCopilotSection(rows: CopilotUsageRow[]): string {
       row.planType,
       formatRemainingPercentFromUsed(premium?.usedPercent),
       formatRemainingLimit(premium),
-      row.error ?? "ok"
+      row.error ?? "ok",
+      formatNoteCell(row.note, 24)
     ];
   });
   return ["Copilot Usage", renderAsciiTable({ head: header, rows: body })].join("\n");

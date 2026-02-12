@@ -1,8 +1,9 @@
-import { confirm, outro, select } from "@clack/prompts";
+import { confirm, outro } from "@clack/prompts";
+import { filterProfilesByEmail, promptSelectProfile } from "./profile-select";
 import { resolveStorePath } from "../store/paths";
 import { readStore, updateStoreWithLock } from "../store/store";
 import type { AccountType, AuthProfile } from "../store/types";
-import { normalizeEmailSelector } from "../utils/string-normalize";
+import { normalizeAccountType } from "../utils/account-type";
 
 type DeleteResult = {
   id: string;
@@ -11,56 +12,6 @@ type DeleteResult = {
   accountType?: AccountType;
   wasActive: boolean;
 };
-
-function normalizeAccountType(value?: string): AccountType | undefined {
-  if (!value) {
-    return undefined;
-  }
-  const normalized = value.trim().toLowerCase();
-  if (!normalized) {
-    return undefined;
-  }
-  if (normalized === "team") {
-    return "business";
-  }
-  if (normalized === "personal" || normalized === "business") {
-    return normalized;
-  }
-  throw new Error("Invalid --account value (allowed: personal, business, team)");
-}
-
-function resolveByEmail<T extends AuthProfile>(
-  candidates: T[],
-  selector: { email: string; accountType?: AccountType }
-): T[] {
-  const email = normalizeEmailSelector(selector.email);
-  const byEmail = candidates.filter((c) => normalizeEmailSelector(c.email) === email);
-  if (!selector.accountType) {
-    return byEmail;
-  }
-  return byEmail.filter((c) => c.accountType === selector.accountType);
-}
-
-async function resolveInteractiveTarget<T extends AuthProfile>(message: string, candidates: T[]): Promise<T> {
-  const choice = await select({
-    message,
-    options: candidates.map((c) => ({
-      value: c.id,
-      label: `${c.email} (${c.accountType ?? "-"})`,
-      hint: c.id
-    }))
-  });
-
-  if (typeof choice !== "string") {
-    throw new Error("No account selected");
-  }
-
-  const picked = candidates.find((c) => c.id === choice);
-  if (!picked) {
-    throw new Error("Selected account not found");
-  }
-  return picked;
-}
 
 async function deleteProfileById(profileId: string): Promise<DeleteResult> {
   const storePath = resolveStorePath();
@@ -132,7 +83,7 @@ export async function deleteCodexProfile(params: {
 
   let target: AuthProfile;
   if (params.email) {
-    const matches = resolveByEmail(codexProfiles, {
+    const matches = filterProfilesByEmail(codexProfiles, {
       email: params.email,
       accountType: normalizeAccountType(params.account)
     });
@@ -146,7 +97,7 @@ export async function deleteCodexProfile(params: {
         const hints = matches.map((m) => `${m.id} (${m.accountType ?? "-"})`).join(", ");
         throw new Error(`Ambiguous Codex selector. Candidates: ${hints}`);
       }
-      target = await resolveInteractiveTarget("Select Codex account to delete", matches);
+      target = await promptSelectProfile("Select Codex account to delete", matches);
     } else {
       target = matches[0]!;
     }
@@ -154,7 +105,7 @@ export async function deleteCodexProfile(params: {
     if (!process.stdin.isTTY) {
       throw new Error("codex delete requires an interactive TTY when email is omitted");
     }
-    target = await resolveInteractiveTarget("Select Codex account to delete", codexProfiles);
+    target = await promptSelectProfile("Select Codex account to delete", codexProfiles);
   }
 
   await requireYesOrConfirm({
@@ -187,7 +138,7 @@ export async function deleteCopilotProfile(params: {
 
   let target: AuthProfile;
   if (params.email) {
-    const matches = resolveByEmail(copilotProfiles, { email: params.email });
+    const matches = filterProfilesByEmail(copilotProfiles, { email: params.email });
     if (matches.length === 0) {
       throw new Error("No matching Copilot profile found");
     }
@@ -196,7 +147,7 @@ export async function deleteCopilotProfile(params: {
         const hints = matches.map((m) => m.id).join(", ");
         throw new Error(`Ambiguous Copilot selector. Candidates: ${hints}`);
       }
-      target = await resolveInteractiveTarget("Select Copilot account to delete", matches);
+      target = await promptSelectProfile("Select Copilot account to delete", matches);
     } else {
       target = matches[0]!;
     }
@@ -204,7 +155,7 @@ export async function deleteCopilotProfile(params: {
     if (!process.stdin.isTTY) {
       throw new Error("copilot delete requires an interactive TTY when email is omitted");
     }
-    target = await resolveInteractiveTarget("Select Copilot account to delete", copilotProfiles);
+    target = await promptSelectProfile("Select Copilot account to delete", copilotProfiles);
   }
 
   await requireYesOrConfirm({
@@ -218,4 +169,3 @@ export async function deleteCopilotProfile(params: {
   }
   return result;
 }
-

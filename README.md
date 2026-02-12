@@ -28,6 +28,8 @@ Early-stage MVP. Core flows are implemented and tested, but APIs and UX may stil
   - Non-interactive: `switch codex <email> --account personal|business|team`
 - Usage aggregation:
   - `usage [provider] [--provider codex|copilot] [--refresh] [--json]`
+- Profile notes:
+  - Add a short note per profile and show it in `accounts` / `usage` output.
 
 ## Why agentbar?
 
@@ -93,6 +95,16 @@ agentbar delete codex alice@example.com --account personal --yes
 agentbar delete copilot alice@example.com --yes
 ```
 
+Add a note to a profile:
+
+```bash
+agentbar note set codex alice@example.com --account personal "Work account"
+agentbar note set copilot alice@example.com "Monthly quota"
+```
+
+If you omit selectors or note text, `agentbar` will switch to interactive prompts (TTY only).
+`--account` is only supported for Codex profiles.
+
 Switch active Codex account:
 
 ```bash
@@ -129,6 +141,8 @@ agentbar switch codex [email] [--account personal|business|team] [--json]
 agentbar delete codex [email] [--account personal|business|team] [--yes] [--json]
 agentbar delete copilot [email] [--yes] [--json]
 agentbar usage [provider] [--provider codex|copilot] [--refresh] [--json]
+agentbar note set <provider> [email] [note...] [--account personal|business|team] [--json]
+agentbar note clear <provider> [email] [--account personal|business|team] [--json]
 ```
 
 ## Storage & Security

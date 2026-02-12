@@ -14,6 +14,17 @@ function findCollector(profile: AuthProfile): UsageCollector | undefined {
   return collectors.find((collector) => collector.canCollect(profile));
 }
 
+function applyProfileMetadataToRow(row: UsageRow, profile: AuthProfile): UsageRow {
+  // Usage cache entries may go stale for display-only fields (email/accountType/note).
+  // Always prefer the latest profile metadata from the store.
+  return {
+    ...row,
+    email: profile.email,
+    accountType: profile.accountType,
+    note: profile.note
+  } as UsageRow;
+}
+
 async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
@@ -83,7 +94,7 @@ export async function collectUsage(options?: {
       const key = usageCacheKey(profile.provider, profile.id);
       const entry = cache.entries[key];
       if (entry && entry.expiresAtMs > now) {
-        rows.push(entry.row);
+        rows.push(applyProfileMetadataToRow(entry.row, profile));
         continue;
       }
     }

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { normalizeAccountType, resolveCodexSwitchTarget } from "../../../src/services/switch-codex";
+import { resolveCodexSwitchTarget } from "../../../src/services/switch-codex";
+import { normalizeAccountType } from "../../../src/utils/account-type";
 
 describe("switch codex selector", () => {
   test("normalizes team alias to business", () => {

@@ -8,6 +8,14 @@ import { switchCodex } from "../services/switch-codex";
 import { deleteCodexProfile, deleteCopilotProfile } from "../services/delete-profiles";
 import { collectUsage } from "../services/usage";
 import { formatUsageSections } from "./render/usage";
+import { clearProfileNote, setProfileNote } from "../services/profile-notes";
+
+function requireProvider(value: ReturnType<typeof parseProviderArg>, raw: string): NonNullable<ReturnType<typeof parseProviderArg>> {
+  if (!value) {
+    throw new Error(`Invalid provider: ${raw} (allowed: codex, copilot)`);
+  }
+  return value;
+}
 
 export function buildProgram(): Command {
   const program = new Command();
@@ -108,6 +116,50 @@ export function buildProgram(): Command {
         return;
       }
       console.log(formatUsageSections(rows));
+    });
+
+  const noteCmd = program.command("note").description("Add or clear notes for stored profiles");
+  noteCmd
+    .command("set")
+    .description("Set a note on a stored profile")
+    .argument("<provider>", "Provider (codex|copilot)")
+    .argument("[email]", "Email selector")
+    .argument("[note...]", "Note text")
+    .option("--account <type>", "Account type selector for codex: personal|business|team")
+    .option("--json", "Print JSON output")
+    .action(async (providerArg: string, email?: string, noteParts?: string[], cmdOpts?: { account?: string; json?: boolean }) => {
+      const provider = requireProvider(parseProviderArg(providerArg), providerArg);
+      const note = Array.isArray(noteParts) && noteParts.length > 0 ? noteParts.join(" ") : undefined;
+      const result = await setProfileNote({
+        provider,
+        email,
+        account: cmdOpts?.account,
+        note,
+        outputJson: Boolean(cmdOpts?.json)
+      });
+      if (cmdOpts?.json) {
+        console.log(JSON.stringify(result, null, 2));
+      }
+    });
+
+  noteCmd
+    .command("clear")
+    .description("Clear a note from a stored profile")
+    .argument("<provider>", "Provider (codex|copilot)")
+    .argument("[email]", "Email selector")
+    .option("--account <type>", "Account type selector for codex: personal|business|team")
+    .option("--json", "Print JSON output")
+    .action(async (providerArg: string, email?: string, cmdOpts?: { account?: string; json?: boolean }) => {
+      const provider = requireProvider(parseProviderArg(providerArg), providerArg);
+      const result = await clearProfileNote({
+        provider,
+        email,
+        account: cmdOpts?.account,
+        outputJson: Boolean(cmdOpts?.json)
+      });
+      if (cmdOpts?.json) {
+        console.log(JSON.stringify(result, null, 2));
+      }
     });
 
   return program;

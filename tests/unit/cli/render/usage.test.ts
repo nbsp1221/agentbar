@@ -23,6 +23,7 @@ describe("cli usage renderer", () => {
         email: "alice@example.com",
         accountType: "personal",
         planType: "plus",
+        note: "line1\nline2 line3",
         primaryLabel: "5h",
         primaryUsedPercent: 20,
         primaryResetAtMs: Date.now() + 3 * 60 * 60 * 1000,
@@ -34,6 +35,7 @@ describe("cli usage renderer", () => {
         provider: "copilot",
         email: "bob@example.com",
         planType: "pro",
+        note: "copilot note",
         metrics: [
           {
             label: "premium",
@@ -63,6 +65,8 @@ describe("cli usage renderer", () => {
     expect(text).toContain("weekly left");
     expect(text).toContain("premium left");
     expect(text).toContain("270/300");
+    expect(text).toContain("line1 line2 line3");
+    expect(text).toContain("copilot note");
     expect(text).not.toContain("window1");
     expect(text).not.toContain("used1");
   });
