@@ -50,6 +50,12 @@ bun add -g github:nbsp1221/agentbar#main
 agentbar --help
 ```
 
+Update to the latest `main` after installation:
+
+```bash
+bun update -g agentbar
+```
+
 If `agentbar` is not found, add Bun global bin to your `PATH`:
 
 ```bash
