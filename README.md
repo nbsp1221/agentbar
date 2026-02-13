@@ -27,6 +27,9 @@ Early-stage MVP. Core flows are implemented and tested, but APIs and UX may stil
   - Copilot is usage-only in agentbar and is always shown as inactive.
 - Usage aggregation:
   - `usage [provider] [--provider codex|copilot] [--refresh] [--json]`
+- Settings:
+  - Read/write: `config`, `config list|get|set|unset`
+  - Config file: `~/.agentbar/config.json`
 - Profile notes:
   - Add a short note per profile and show it in `accounts` / `usage` output.
 
@@ -146,6 +149,16 @@ agentbar usage --provider codex --json
 
 `agentbar usage` prints provider-specific sections (Codex/Copilot) with domain-specific columns.
 
+View and update settings:
+
+```bash
+agentbar config
+agentbar config list
+agentbar config get usage.timeoutMs
+agentbar config set usage.timeoutMs 8000
+agentbar config unset usage.timeoutMs
+```
+
 ## Disclaimer
 
 `agentbar` is not affiliated with OpenAI or GitHub.
@@ -162,6 +175,11 @@ agentbar delete copilot [email] [--plan individual|business|...] [--yes] [--json
 agentbar usage [provider] [--provider codex|copilot] [--refresh] [--json]
 agentbar note set <provider> [email] [note...] [--plan <provider-plan>] [--json]
 agentbar note clear <provider> [email] [--plan <provider-plan>] [--json]
+agentbar config [--json]
+agentbar config list [--json]
+agentbar config get <key> [--json]
+agentbar config set <key> <value> [--json]
+agentbar config unset <key> [--json]
 ```
 
 ## Storage & Security
@@ -186,17 +204,41 @@ To keep repeated runs fast, `agentbar` uses a small TTL cache:
 
 - Cache file: `~/.agentbar/usage-cache.json`
 - Bypass cache: `agentbar usage --refresh`
+- Settings file: `~/.agentbar/config.json`
 
-Environment variables:
+Use `agentbar config list/get/set/unset` to manage these values:
 
-- `AGENTBAR_USAGE_TIMEOUT_MS` (default: `5000`)
+- `usage.timeoutMs` (default: `5000`)
   - Per-profile HTTP timeout for usage fetch.
-- `AGENTBAR_USAGE_TTL_MS` (default: `60000`)
+- `usage.ttlMs` (default: `60000`)
   - Cache TTL for successful usage rows.
-- `AGENTBAR_USAGE_ERROR_TTL_MS` (default: `10000`)
+- `usage.errorTtlMs` (default: `10000`)
   - Cache TTL for error usage rows (shorter by default so transient errors recover quickly).
-- `AGENTBAR_USAGE_CONCURRENCY` (default: `4`)
+- `usage.concurrency` (default: `4`)
   - Max number of profiles fetched concurrently.
+
+Supported keys for key-based commands:
+
+- `usage.timeoutMs` (non-negative integer)
+- `usage.ttlMs` (non-negative integer)
+- `usage.errorTtlMs` (non-negative integer)
+- `usage.concurrency` (positive integer)
+
+Example `config.json`:
+
+```json
+{
+  "usage": {
+    "timeoutMs": 5000,
+    "ttlMs": 60000,
+    "errorTtlMs": 10000,
+    "concurrency": 4
+  }
+}
+```
+
+Debug environment variables:
+
 - `AGENTBAR_DEBUG_TIMING=1`
   - Prints per-profile timing info to stderr (no secrets).
 - `AGENTBAR_DEBUG_STACK=1`
@@ -232,7 +274,7 @@ bun run test:watch
 
 ## Roadmap
 
-- Optional CLI flags for usage timeout/TTL/concurrency (in addition to env vars)
+- Optional one-shot CLI flags to override usage config values per run
 - Richer output formats and filters
 - Additional providers after MVP hardening
 - Release automation (tags/changelog)

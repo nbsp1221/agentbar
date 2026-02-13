@@ -1,6 +1,7 @@
 import { resolveStorePath } from "../../store/paths";
 import { readStore, upsertProfile } from "../../store/store";
 import type { AuthProfile, Provider } from "../../store/types";
+import { readSettings } from "../../config/settings";
 import { codexUsageCollector } from "./collectors/codex";
 import { copilotUsageCollector } from "./collectors/copilot";
 import type { UsageCollector, UsageCollectorContext, UsageRow } from "./types";
@@ -82,22 +83,13 @@ export async function collectUsage(options?: {
   const now = Date.now();
   const storePath = resolveStorePath();
   const store = await readStore(storePath);
+  const usageSettings = readSettings().usage;
 
   const profiles = store.profiles.filter((p) => (options?.provider ? p.provider === options.provider : true));
-
-  const readNumberEnv = (name: string): number | undefined => {
-    const raw = process.env[name];
-    if (!raw) {
-      return undefined;
-    }
-    const n = Number(raw);
-    return Number.isFinite(n) ? n : undefined;
-  };
-
-  const concurrency = readNumberEnv("AGENTBAR_USAGE_CONCURRENCY") ?? 4;
-  const timeoutMs = readNumberEnv("AGENTBAR_USAGE_TIMEOUT_MS") ?? 5000;
-  const ttlMs = readNumberEnv("AGENTBAR_USAGE_TTL_MS") ?? 60_000;
-  const errorTtlMs = readNumberEnv("AGENTBAR_USAGE_ERROR_TTL_MS") ?? 10_000;
+  const concurrency = usageSettings.concurrency;
+  const timeoutMs = usageSettings.timeoutMs;
+  const ttlMs = usageSettings.ttlMs;
+  const errorTtlMs = usageSettings.errorTtlMs;
 
   const refresh = options?.refresh === true;
   const fetchOverride = options?.fetchImpl;
@@ -130,7 +122,7 @@ export async function collectUsage(options?: {
 
   const collected = await mapWithConcurrency(
     toFetch,
-    Number.isFinite(concurrency) ? concurrency : 4,
+    concurrency,
     async (profile) => {
       const collector = findCollector(profile);
       if (!collector) {

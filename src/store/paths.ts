@@ -16,3 +16,7 @@ export function resolveStoreDir(): string {
 export function resolveStorePath(): string {
   return path.join(resolveStoreDir(), "store.json");
 }
+
+export function resolveConfigPath(): string {
+  return path.join(resolveStoreDir(), "config.json");
+}

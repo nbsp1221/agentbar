@@ -17,6 +17,6 @@ function isKnownProvider(provider: string): provider is Provider {
   return provider in PROVIDER_CAPABILITIES;
 }
 
-export function providerSupportsCliActivation(provider: string): boolean {
+export function providerSupportsCliActivation(provider: string): provider is Provider {
   return isKnownProvider(provider) && PROVIDER_CAPABILITIES[provider].supportsCliActivation;
 }

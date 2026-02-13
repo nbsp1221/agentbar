@@ -9,6 +9,15 @@ function writeJson(pathname: string, data: unknown): void {
   writeFileSync(pathname, JSON.stringify(data, null, 2), "utf8");
 }
 
+function writeUsageConfig(homeDir: string, usage: {
+  timeoutMs?: number;
+  ttlMs?: number;
+  errorTtlMs?: number;
+  concurrency?: number;
+}): void {
+  writeJson(path.join(homeDir, ".agentbar", "config.json"), { usage });
+}
+
 describe("usage TTL cache", () => {
   const prevHome = process.env.HOME;
 
@@ -16,8 +25,6 @@ describe("usage TTL cache", () => {
     vi.useRealTimers();
     process.env.HOME = prevHome;
     delete process.env.AGENTBAR_USAGE_TTL_MS;
-    delete process.env.AGENTBAR_USAGE_ERROR_TTL_MS;
-    delete process.env.AGENTBAR_USAGE_TIMEOUT_MS;
   });
 
   test("returns cached rows without hitting the network when cache is fresh", async () => {
@@ -186,11 +193,10 @@ describe("usage TTL cache", () => {
     expect(rows).toHaveLength(1);
   });
 
-  test("bypasses cache reads when AGENTBAR_USAGE_TTL_MS=0", async () => {
-    process.env.AGENTBAR_USAGE_TTL_MS = "0";
-
+  test("bypasses cache reads when config usage.ttlMs=0", async () => {
     const homeDir = path.join(tmpdir(), `agentbar-home-${Date.now()}-${Math.random().toString(16).slice(2)}`);
     process.env.HOME = homeDir;
+    writeUsageConfig(homeDir, { ttlMs: 0 });
 
     const storePath = path.join(homeDir, ".agentbar", "store.json");
     writeJson(storePath, {
@@ -242,16 +248,68 @@ describe("usage TTL cache", () => {
     expect(rows).toHaveLength(1);
   });
 
-  test("caches error rows using AGENTBAR_USAGE_ERROR_TTL_MS (shorter TTL)", async () => {
+  test("does not use AGENTBAR_USAGE_TTL_MS env var anymore", async () => {
+    process.env.AGENTBAR_USAGE_TTL_MS = "0";
+
+    const homeDir = path.join(tmpdir(), `agentbar-home-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+    process.env.HOME = homeDir;
+
+    const storePath = path.join(homeDir, ".agentbar", "store.json");
+    writeJson(storePath, {
+      version: 1,
+      profiles: [
+        {
+          id: "p1",
+          provider: "codex",
+          email: "a@b.com",
+          createdAt: "2026-02-11T00:00:00.000Z",
+          updatedAt: "2026-02-11T00:00:00.000Z",
+          credentials: { kind: "codex_oauth", accessToken: "x", refreshToken: "y" }
+        }
+      ],
+      active: {}
+    });
+
+    const cachePath = path.join(homeDir, ".agentbar", "usage-cache.json");
+    writeJson(cachePath, {
+      version: 1,
+      entries: {
+        "codex:p1": {
+          provider: "codex",
+          profileId: "p1",
+          expiresAtMs: Date.now() + 60_000,
+          row: {
+            provider: "codex",
+            email: "a@b.com",
+            planType: "cached",
+            primaryUsedPercent: 0,
+            secondaryUsedPercent: 0
+          }
+        }
+      }
+    });
+
+    const fetchImpl = async (): Promise<Response> => {
+      throw new Error("network should not be called");
+    };
+
+    const rows = await collectUsage({
+      provider: "codex",
+      fetchImpl: fetchImpl as unknown as typeof fetch
+    });
+
+    expect(rows).toHaveLength(1);
+    expect((rows[0] as any).planType).toBe("cached");
+  });
+
+  test("caches error rows using config usage.errorTtlMs (shorter TTL)", async () => {
     vi.useFakeTimers();
     const baseNow = new Date("2026-02-12T00:00:00.000Z");
     vi.setSystemTime(baseNow);
 
-    process.env.AGENTBAR_USAGE_TTL_MS = "60000";
-    process.env.AGENTBAR_USAGE_ERROR_TTL_MS = "10000";
-
     const homeDir = path.join(tmpdir(), `agentbar-home-${Date.now()}-${Math.random().toString(16).slice(2)}`);
     process.env.HOME = homeDir;
+    writeUsageConfig(homeDir, { ttlMs: 60_000, errorTtlMs: 10_000 });
 
     const storePath = path.join(homeDir, ".agentbar", "store.json");
     writeJson(storePath, {

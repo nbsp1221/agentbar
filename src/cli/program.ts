@@ -9,12 +9,33 @@ import { deleteCodexProfile, deleteCopilotProfile } from "../services/delete-pro
 import { collectUsage } from "../services/usage";
 import { formatUsageSections } from "./render/usage";
 import { clearProfileNote, setProfileNote } from "../services/profile-notes";
+import {
+  getSettingValue,
+  listSettings,
+  setSettingValue,
+  unsetSettingValue
+} from "../services/settings";
+import { settingKeys, type SettingValues } from "../config/settings";
 
 function requireProvider(value: ReturnType<typeof parseProviderArg>, raw: string): NonNullable<ReturnType<typeof parseProviderArg>> {
   if (!value) {
     throw new Error(`Invalid provider: ${raw} (allowed: codex, copilot)`);
   }
   return value;
+}
+
+const settingKeyHelp = settingKeys.join("|");
+
+function formatSettingLines(settings: SettingValues): string {
+  return settingKeys.map((key) => `${key}=${settings[key]}`).join("\n");
+}
+
+function printSettings(settings: SettingValues, outputJson: boolean | undefined): void {
+  if (outputJson) {
+    console.log(JSON.stringify(settings, null, 2));
+    return;
+  }
+  console.log(formatSettingLines(settings));
 }
 
 export function buildProgram(): Command {
@@ -162,6 +183,51 @@ export function buildProgram(): Command {
       if (cmdOpts?.json) {
         console.log(JSON.stringify(result, null, 2));
       }
+    });
+
+  const configCmd = program
+    .command("config")
+    .description("Manage agentbar settings")
+    .option("--json", "Print JSON output")
+    .action((cmdOpts?: { json?: boolean }) => {
+      printSettings(listSettings(), cmdOpts?.json);
+    });
+  configCmd
+    .command("list")
+    .description("List settings")
+    .option("--json", "Print JSON output")
+    .action((cmdOpts?: { json?: boolean }) => {
+      printSettings(listSettings(), cmdOpts?.json);
+    });
+  configCmd
+    .command("get")
+    .description("Get one setting")
+    .argument("<key>", `Setting key (${settingKeyHelp})`)
+    .option("--json", "Print JSON output")
+    .action((key: string, cmdOpts?: { json?: boolean }) => {
+      const value = getSettingValue(key);
+      if (cmdOpts?.json) {
+        console.log(JSON.stringify({ key, value }, null, 2));
+        return;
+      }
+      console.log(value);
+    });
+  configCmd
+    .command("set")
+    .description("Set one setting")
+    .argument("<key>", `Setting key (${settingKeyHelp})`)
+    .argument("<value>", "Integer value")
+    .option("--json", "Print JSON output")
+    .action((key: string, value: string, cmdOpts?: { json?: boolean }) => {
+      printSettings(setSettingValue(key, value), cmdOpts?.json);
+    });
+  configCmd
+    .command("unset")
+    .description("Reset one setting to default")
+    .argument("<key>", `Setting key (${settingKeyHelp})`)
+    .option("--json", "Print JSON output")
+    .action((key: string, cmdOpts?: { json?: boolean }) => {
+      printSettings(unsetSettingValue(key), cmdOpts?.json);
     });
 
   return program;
