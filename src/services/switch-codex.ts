@@ -70,8 +70,6 @@ export async function switchCodex(params: {
     target = await promptSelectProfile("Select Codex account", codexProfiles);
   }
 
-  await setActiveProfile(storePath, "codex", target.id);
-
   // Ensure we don't write an already-expired access token into ~/.codex/auth.json.
   const refreshed = await ensureFreshCodexProfile(target, { requireFresh: true });
   if (refreshed.error && !refreshed.updatedProfile) {
@@ -83,6 +81,7 @@ export async function switchCodex(params: {
   }
 
   const authPath = writeCodexAuthFromProfile(effectiveTarget);
+  await setActiveProfile(storePath, "codex", effectiveTarget.id);
 
   if (!params.outputJson) {
     outro(`Switched Codex: ${effectiveTarget.email}`);

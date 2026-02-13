@@ -43,7 +43,7 @@ export function buildProgram(): Command {
       }
       console.log(formatAccounts(rows));
     });
-  const switchCommand = program.command("switch").description("Switch active provider account");
+  const switchCommand = program.command("switch").description("Switch active Codex account");
   switchCommand
     .command("codex")
     .description("Switch active Codex account and apply to Codex auth.json")

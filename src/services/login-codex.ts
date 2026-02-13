@@ -10,7 +10,7 @@ import {
 import { inferCodexAccountId, inferCodexEmail, inferCodexPlanType } from "../providers/codex/profile";
 import { DEFAULT_FALLBACK_TTL_MS } from "../providers/codex/refresh";
 import { resolveStorePath } from "../store/paths";
-import { setActiveProfile, upsertProfile } from "../store/store";
+import { upsertProfile } from "../store/store";
 import { safeDecodeJwtPayload } from "../utils/jwt";
 
 export function buildCodexAuthorizeOutput(url: string): {
@@ -94,6 +94,5 @@ export async function loginCodex(): Promise<void> {
     }
   });
 
-  await setActiveProfile(storePath, "codex", id);
   outro(`Saved Codex profile: ${email}${planType ? ` (${planType})` : ""}`);
 }

@@ -152,6 +152,6 @@ describe("delete command (e2e)", () => {
     const next = readStore(storePath);
     expect(next.profiles).toHaveLength(1);
     expect(next.profiles[0]?.id).toBe("cp2");
-    expect(next.active?.copilot).toBe("cp2");
+    expect(next.active?.copilot).toBeUndefined();
   });
 });

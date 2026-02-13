@@ -1,4 +1,5 @@
 import { confirm, outro } from "@clack/prompts";
+import { providerSupportsCliActivation } from "../providers/capabilities";
 import { filterProfilesByEmail, promptSelectProfile } from "./profile-select";
 import { resolveStorePath } from "../store/paths";
 import { readStore, updateStoreWithLock } from "../store/store";
@@ -26,10 +27,9 @@ async function deleteProfileById(profileId: string): Promise<DeleteResult> {
     deleted = store.profiles[idx]!;
     store.profiles.splice(idx, 1);
 
-    const provider = deleted.provider;
-    if (store.active[provider] === deleted.id) {
+    if (providerSupportsCliActivation(deleted.provider) && store.active[deleted.provider] === deleted.id) {
       wasActive = true;
-      delete store.active[provider];
+      delete store.active[deleted.provider];
     }
 
     return store;

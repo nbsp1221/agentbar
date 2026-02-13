@@ -107,6 +107,7 @@ describe("login copilot", () => {
         planType: "business"
       })
     );
+    expect(mocks.setActiveProfile).not.toHaveBeenCalled();
   });
 
   test("does not persist unknown planType", async () => {
@@ -123,6 +124,7 @@ describe("login copilot", () => {
 
     const savedProfile = mocks.upsertProfile.mock.calls[0]?.[1] as Record<string, unknown>;
     expect(savedProfile.planType).toBeUndefined();
+    expect(mocks.setActiveProfile).not.toHaveBeenCalled();
   });
 
   test("continues login when usage lookup fails", async () => {
@@ -134,6 +136,6 @@ describe("login copilot", () => {
     expect(savedProfile.provider).toBe("copilot");
     expect(savedProfile.email).toBe("alice@example.com");
     expect(savedProfile.planType).toBeUndefined();
-    expect(mocks.setActiveProfile).toHaveBeenCalledWith("/tmp/agentbar-store.json", "copilot", "copilot-1");
+    expect(mocks.setActiveProfile).not.toHaveBeenCalled();
   });
 });

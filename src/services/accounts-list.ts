@@ -1,3 +1,4 @@
+import { providerSupportsCliActivation } from "../providers/capabilities";
 import { readStore } from "../store/store";
 import type { Provider } from "../store/types";
 
@@ -22,7 +23,7 @@ export async function listAccounts(options?: {
       email: p.email,
       planType: p.planType,
       note: p.note,
-      active: store.active[p.provider] === p.id
+      active: providerSupportsCliActivation(p.provider) && store.active[p.provider] === p.id
     }));
 
   all.sort((a, b) => a.provider.localeCompare(b.provider) || a.email.localeCompare(b.email));

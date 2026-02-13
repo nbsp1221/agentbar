@@ -22,6 +22,9 @@ Early-stage MVP. Core flows are implemented and tested, but APIs and UX may stil
 - Codex account switching:
   - Interactive: `switch codex`
   - Non-interactive: `switch codex <email> [--plan plus|team|...]`
+- Active marker semantics:
+  - `accounts` `active` column tracks the profile currently applied to Codex CLI.
+  - Copilot is usage-only in agentbar and is always shown as inactive.
 - Usage aggregation:
   - `usage [provider] [--provider codex|copilot] [--refresh] [--json]`
 - Profile notes:
@@ -30,7 +33,7 @@ Early-stage MVP. Core flows are implemented and tested, but APIs and UX may stil
 ## Why agentbar?
 
 If you use multiple AI coding accounts, you usually need to:
-- keep track of which account is active,
+- keep track of which Codex account is active,
 - inspect usage/reset windows across services,
 - and manually swap auth files repeatedly.
 
@@ -82,6 +85,8 @@ agentbar login codex
 agentbar login copilot
 ```
 
+`login codex` only saves a profile. To apply it to Codex CLI, run `agentbar switch codex ...`.
+
 List saved accounts:
 
 ```bash
@@ -89,6 +94,9 @@ agentbar accounts
 agentbar accounts --json
 agentbar accounts codex
 ```
+
+In `accounts`, `active` means the profile currently applied to Codex CLI.  
+Copilot rows are always inactive by design.
 
 Delete a saved account:
 

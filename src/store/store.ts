@@ -3,6 +3,7 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import lockfile from "proper-lockfile";
+import { providerSupportsCliActivation } from "../providers/capabilities";
 import { loadJsonFile, saveJsonFile } from "./json-file";
 import { resolveStorePath } from "./paths";
 import { type AuthProfile, makeEmptyStore, type StoreData } from "./types";
@@ -14,8 +15,16 @@ function coerceStore(value: unknown): StoreData {
 
   const raw = value as Partial<StoreData>;
   const profiles = Array.isArray(raw.profiles) ? raw.profiles : [];
-  const active =
-    raw.active && typeof raw.active === "object" ? raw.active : ({} as StoreData["active"]);
+  const rawActive = raw.active && typeof raw.active === "object" ? (raw.active as Record<string, unknown>) : {};
+  const active = Object.entries(rawActive).reduce<StoreData["active"]>((acc, [provider, profileId]) => {
+    if (!providerSupportsCliActivation(provider)) {
+      return acc;
+    }
+    if (typeof profileId === "string") {
+      acc[provider] = profileId;
+    }
+    return acc;
+  }, {});
 
   return {
     version: typeof raw.version === "number" ? raw.version : 1,
@@ -79,6 +88,10 @@ export async function setActiveProfile(
   provider: AuthProfile["provider"],
   profileId: string
 ): Promise<StoreData> {
+  if (!providerSupportsCliActivation(provider)) {
+    throw new Error(`Provider does not support active profile: ${provider}`);
+  }
+
   return updateStoreWithLock(pathname, (store) => {
     store.active[provider] = profileId;
     return store;

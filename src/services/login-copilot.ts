@@ -4,7 +4,7 @@ import { pollForAccessToken, requestDeviceCode } from "../providers/copilot/devi
 import { fetchCopilotLabel } from "../providers/copilot/identity";
 import { fetchCopilotUsageForProfile } from "../providers/copilot/usage";
 import { resolveStorePath } from "../store/paths";
-import { setActiveProfile, upsertProfile } from "../store/store";
+import { upsertProfile } from "../store/store";
 import { normalizePersistedPlanType } from "../utils/plan";
 
 export async function loginCopilot(): Promise<void> {
@@ -68,6 +68,5 @@ export async function loginCopilot(): Promise<void> {
       : baseProfile
   );
 
-  await setActiveProfile(storePath, "copilot", id);
   outro(`Saved Copilot profile: ${email}${planType ? ` (${planType})` : ""}`);
 }
