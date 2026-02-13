@@ -27,7 +27,7 @@ describe("config command (e2e)", () => {
 
     const listProc = runAgentbar(homeDir, ["config", "list"]);
     expect(listProc.status).toBe(0);
-    expect(listProc.stdout).toContain("usage.timeoutMs=5000");
+    expect(listProc.stdout).toContain("usage.timeoutMs=10000");
     expect(listProc.stdout).toContain("usage.ttlMs=60000");
 
     const setProc = runAgentbar(homeDir, ["config", "set", "usage.timeoutMs", "8000"]);
@@ -43,7 +43,7 @@ describe("config command (e2e)", () => {
 
     const unsetProc = runAgentbar(homeDir, ["config", "unset", "usage.timeoutMs"]);
     expect(unsetProc.status).toBe(0);
-    expect(unsetProc.stdout).toContain("usage.timeoutMs=5000");
+    expect(unsetProc.stdout).toContain("usage.timeoutMs=10000");
 
     const configAfterUnset = readConfig(homeDir);
     expect(configAfterUnset.usage?.timeoutMs).toBeUndefined();

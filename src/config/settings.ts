@@ -25,7 +25,7 @@ export type SettingValues = Record<SettingKey, number>;
 
 const DEFAULT_SETTINGS: AppSettings = {
   usage: {
-    timeoutMs: 5000,
+    timeoutMs: 10000,
     ttlMs: 60_000,
     errorTtlMs: 10_000,
     concurrency: 4

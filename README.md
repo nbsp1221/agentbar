@@ -208,7 +208,7 @@ To keep repeated runs fast, `agentbar` uses a small TTL cache:
 
 Use `agentbar config list/get/set/unset` to manage these values:
 
-- `usage.timeoutMs` (default: `5000`)
+- `usage.timeoutMs` (default: `10000`)
   - Per-profile HTTP timeout for usage fetch.
 - `usage.ttlMs` (default: `60000`)
   - Cache TTL for successful usage rows.
@@ -229,7 +229,7 @@ Example `config.json`:
 ```json
 {
   "usage": {
-    "timeoutMs": 5000,
+    "timeoutMs": 10000,
     "ttlMs": 60000,
     "errorTtlMs": 10000,
     "concurrency": 4

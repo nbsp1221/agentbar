@@ -22,14 +22,14 @@ describe("settings service", () => {
     vi.clearAllMocks();
 
     mocks.readSettingValues.mockReturnValue({
-      "usage.timeoutMs": 5000,
+      "usage.timeoutMs": 10000,
       "usage.ttlMs": 60000,
       "usage.errorTtlMs": 10000,
       "usage.concurrency": 4
     });
 
     mocks.getSetting.mockImplementation((key: string) => {
-      if (key === "usage.timeoutMs") return 5000;
+      if (key === "usage.timeoutMs") return 10000;
       if (key === "usage.ttlMs") return 60000;
       if (key === "usage.errorTtlMs") return 10000;
       if (key === "usage.concurrency") return 4;
@@ -37,14 +37,14 @@ describe("settings service", () => {
     });
 
     mocks.setSetting.mockImplementation((key: string, value: number) => ({
-      "usage.timeoutMs": key === "usage.timeoutMs" ? value : 5000,
+      "usage.timeoutMs": key === "usage.timeoutMs" ? value : 10000,
       "usage.ttlMs": key === "usage.ttlMs" ? value : 60000,
       "usage.errorTtlMs": key === "usage.errorTtlMs" ? value : 10000,
       "usage.concurrency": key === "usage.concurrency" ? value : 4
     }));
 
     mocks.unsetSetting.mockImplementation((key: string) => ({
-      "usage.timeoutMs": key === "usage.timeoutMs" ? 5000 : 7000,
+      "usage.timeoutMs": key === "usage.timeoutMs" ? 10000 : 7000,
       "usage.ttlMs": key === "usage.ttlMs" ? 60000 : 45000,
       "usage.errorTtlMs": key === "usage.errorTtlMs" ? 10000 : 9000,
       "usage.concurrency": key === "usage.concurrency" ? 4 : 8
@@ -55,7 +55,7 @@ describe("settings service", () => {
     const listed = listSettings();
     expect(mocks.readSettingValues).toHaveBeenCalledTimes(1);
     expect(listed).toEqual({
-      "usage.timeoutMs": 5000,
+      "usage.timeoutMs": 10000,
       "usage.ttlMs": 60000,
       "usage.errorTtlMs": 10000,
       "usage.concurrency": 4
@@ -63,7 +63,7 @@ describe("settings service", () => {
   });
 
   test("gets a supported setting key", () => {
-    expect(getSettingValue("usage.timeoutMs")).toBe(5000);
+    expect(getSettingValue("usage.timeoutMs")).toBe(10000);
     expect(mocks.getSetting).toHaveBeenCalledWith("usage.timeoutMs");
   });
 
@@ -86,6 +86,6 @@ describe("settings service", () => {
   test("unsets one setting key", () => {
     const saved = unsetSettingValue("usage.timeoutMs");
     expect(mocks.unsetSetting).toHaveBeenCalledWith("usage.timeoutMs");
-    expect(saved["usage.timeoutMs"]).toBe(5000);
+    expect(saved["usage.timeoutMs"]).toBe(10000);
   });
 });

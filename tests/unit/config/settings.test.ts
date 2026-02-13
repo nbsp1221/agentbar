@@ -30,7 +30,7 @@ describe("settings config", () => {
     const settings = readSettings();
     expect(settings).toEqual({
       usage: {
-        timeoutMs: 5000,
+        timeoutMs: 10000,
         ttlMs: 60000,
         errorTtlMs: 10000,
         concurrency: 4
@@ -131,7 +131,7 @@ describe("settings config", () => {
     const configPath = path.join(homeDir, ".agentbar", "config.json");
     writeJson(configPath, {
       usage: {
-        timeoutMs: 5000
+        timeoutMs: 10000
       },
       other: {
         keep: true
@@ -144,7 +144,7 @@ describe("settings config", () => {
     const onDisk = JSON.parse(readFileSync(configPath, "utf8")) as any;
     expect(onDisk.other?.keep).toBe(true);
     expect(onDisk.usage.ttlMs).toBe(120000);
-    expect(onDisk.usage.timeoutMs).toBe(5000);
+    expect(onDisk.usage.timeoutMs).toBe(10000);
   });
 
   test("normalizes invalid single-setting writes with current value fallback", () => {
@@ -178,7 +178,7 @@ describe("settings config", () => {
     });
 
     const saved = unsetSetting("usage.timeoutMs");
-    expect(saved["usage.timeoutMs"]).toBe(5000);
+    expect(saved["usage.timeoutMs"]).toBe(10000);
     expect(saved["usage.ttlMs"]).toBe(70000);
 
     const onDisk = JSON.parse(readFileSync(configPath, "utf8")) as any;
