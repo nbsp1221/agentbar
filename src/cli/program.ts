@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { readFileSync } from "node:fs";
 import { parseProviderArg } from "./provider-arg";
 import { listAccounts } from "../services/accounts-list";
 import { formatAccounts } from "./render/accounts";
@@ -38,10 +39,24 @@ function printSettings(settings: SettingValues, outputJson: boolean | undefined)
   console.log(formatSettingLines(settings));
 }
 
+function resolveCliVersion(): string {
+  try {
+    const raw = readFileSync(new URL("../../package.json", import.meta.url), "utf8");
+    const parsed = JSON.parse(raw) as { version?: unknown };
+    if (typeof parsed.version === "string" && parsed.version.trim().length > 0) {
+      return parsed.version.trim();
+    }
+  } catch {
+    // Keep CLI usable even if package metadata cannot be read.
+  }
+  return "0.0.0";
+}
+
 export function buildProgram(): Command {
   const program = new Command();
 
   program.name("agentbar").description("CLI for managing multi-provider auth profiles");
+  program.version(resolveCliVersion(), "-v, --version", "Print version");
 
   const login = program.command("login").description("Login to a provider");
   login.command("codex").description("Login to Codex via OAuth").action(loginCodex);

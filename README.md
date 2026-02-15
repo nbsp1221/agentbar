@@ -1,180 +1,141 @@
-# agentbar
+# 🔑 agentbar
 
-`agentbar` is a CLI for managing multiple AI account credentials and checking usage in one place.
+CLI to manage multiple AI auth profiles and usage in one place.
 
-The goal is to reduce re-login friction when you work across multiple accounts.
+## What It Does
 
-## Status
-
-Early-stage MVP. Core flows are implemented and tested, but APIs and UX may still change.
-
-## Features (MVP)
-
-- Multi-profile auth store (`~/.agentbar/store.json`)
-- Provider login flows:
-  - `login codex` (OAuth)
-  - `login copilot` (GitHub device flow)
-- Account listing:
-  - `accounts [provider] [--json]`
-- Account deletion:
-  - `delete codex [email] [--plan plus|team|...] [--yes] [--json]`
-  - `delete copilot [email] [--plan individual|business|...] [--yes] [--json]`
-- Codex account switching:
-  - Interactive: `switch codex`
-  - Non-interactive: `switch codex <email> [--plan plus|team|...]`
-- Active marker semantics:
-  - `accounts` `active` column tracks the profile currently applied to Codex CLI.
-  - Copilot is usage-only in agentbar and is always shown as inactive.
-- Usage aggregation:
-  - `usage [provider] [--provider codex|copilot] [--refresh] [--json]`
-- Settings:
-  - Read/write: `config`, `config list|get|set|unset`
-  - Config file: `~/.agentbar/config.json`
-- Profile notes:
-  - Add a short note per profile and show it in `accounts` / `usage` output.
-
-## Why agentbar?
-
-If you use multiple AI coding accounts, you usually need to:
-- keep track of which Codex account is active,
-- inspect usage/reset windows across services,
-- and manually swap auth files repeatedly.
-
-`agentbar` centralizes those tasks into one CLI workflow.
+- Stores multiple `codex` and `copilot` profiles in one local store.
+- Switches the active Codex profile and applies it to Codex CLI auth.
+- Fetches usage data for saved profiles with caching and concurrency controls.
+- Supports per-profile notes for account context.
 
 ## Requirements
 
-- [Bun](https://bun.sh/) `>= 1.3`
+- [Bun](https://bun.sh/) `>= 1.3` (required at runtime)
+- npm (optional, only if you install via npm)
+
+`agentbar` is distributed through npm, but the executable runs with Bun (`#!/usr/bin/env bun`).
 
 ## Installation
 
-### Install with Bun (recommended)
+Recommended (Bun):
 
 ```bash
-# Install from GitHub. Use a tag/commit to pin a version.
-bun add -g github:nbsp1221/agentbar#main
+bun add -g agentbar
 agentbar --help
 ```
 
-Update to the latest `main` after installation:
+Alternative (npm):
+
+```bash
+npm install -g agentbar
+agentbar --help
+```
+
+Update:
 
 ```bash
 bun update -g agentbar
-```
-
-If `agentbar` is not found, add Bun global bin to your `PATH`:
-
-```bash
-# Linux/macOS
-export PATH="$HOME/.bun/bin:$PATH"
-
-# Windows (PowerShell)
-$env:Path += ";$HOME\\.bun\\bin"
-```
-
-### Install from a local path (development)
-
-```bash
-bun add -g file:/absolute/path/to/agentbar
-agentbar --help
+# or, if installed via npm:
+npm update -g agentbar
 ```
 
 ## Quick Start
 
-Login:
+Check installed version:
+
+```bash
+agentbar --version
+# or:
+agentbar -v
+```
+
+Login and save profiles:
 
 ```bash
 agentbar login codex
 agentbar login copilot
 ```
 
-`login codex` only saves a profile. To apply it to Codex CLI, run `agentbar switch codex ...`.
-
-List saved accounts:
+List accounts:
 
 ```bash
 agentbar accounts
 agentbar accounts --json
-agentbar accounts codex
 ```
 
-In `accounts`, `active` means the profile currently applied to Codex CLI.  
-Copilot rows are always inactive by design.
-
-Delete a saved account:
+Switch active Codex profile:
 
 ```bash
-agentbar delete codex alice@example.com --yes
-agentbar delete copilot alice@example.com --yes
-
-# when same email has multiple Codex plans
-agentbar delete codex alice@example.com --plan team --yes
-# when same email has multiple Copilot plans
-agentbar delete copilot alice@example.com --plan business --yes
-```
-
-Add a note to a profile:
-
-```bash
-agentbar note set codex alice@example.com "Work account"
-agentbar note set copilot alice@example.com "Monthly quota"
-
-# when same email has multiple profiles
-agentbar note set codex alice@example.com --plan plus "Personal"
-```
-
-If you omit selectors or note text, `agentbar` will switch to interactive prompts (TTY only).
-
-Switch active Codex account:
-
-```bash
-# interactive
-agentbar switch codex
-
-# non-interactive
 agentbar switch codex alice@example.com
-
-# disambiguate same-email profiles by plan
-agentbar switch codex alice@example.com --plan team
 ```
 
 Check usage:
 
 ```bash
 agentbar usage
-agentbar usage codex
-agentbar usage copilot
-agentbar usage --provider codex --json
+agentbar usage --provider codex
 ```
 
-`agentbar usage` prints provider-specific sections (Codex/Copilot) with domain-specific columns.
-
-View and update settings:
+Set and clear notes:
 
 ```bash
-agentbar config
-agentbar config list
-agentbar config get usage.timeoutMs
-agentbar config set usage.timeoutMs 8000
-agentbar config unset usage.timeoutMs
+agentbar note set codex alice@example.com "Work account"
+agentbar note clear codex alice@example.com
 ```
 
-## Disclaimer
+Delete saved profiles:
 
-`agentbar` is not affiliated with OpenAI or GitHub.
+```bash
+agentbar delete codex alice@example.com --yes
+agentbar delete copilot alice@example.com --yes
+```
 
-## Command Reference
+## Important Behavior
+
+### Active Semantics
+
+- `active` in `agentbar accounts` means the profile currently applied to Codex CLI.
+- Only Codex supports active switching in `agentbar`.
+- Copilot rows are always inactive and usage-only.
+
+### Profile Selection
+
+- Profile selection is case-insensitive by email.
+- If multiple profiles share the same email, provide `--plan`.
+- If required selectors are omitted in a TTY session, `agentbar` prompts interactively.
+- In non-interactive mode, ambiguous selectors fail with an error.
+
+### Non-Interactive Safety
+
+- `agentbar delete ...` requires `--yes` outside interactive TTY.
+- `note set` without note text requires interactive input; otherwise it fails.
+
+### Codex Auth Apply Target
+
+`agentbar switch codex` writes to:
+
+- `$CODEX_HOME/auth.json` when `CODEX_HOME` is set
+- `~/.codex/auth.json` otherwise
+
+## Commands
 
 ```text
 agentbar login codex
 agentbar login copilot
+
 agentbar accounts [provider] [--json]
-agentbar switch codex [email] [--plan plus|team|...] [--json]
-agentbar delete codex [email] [--plan plus|team|...] [--yes] [--json]
-agentbar delete copilot [email] [--plan individual|business|...] [--yes] [--json]
+
+agentbar switch codex [email] [--plan <plan>] [--json]
+
+agentbar delete codex [email] [--plan <plan>] [--yes] [--json]
+agentbar delete copilot [email] [--plan <plan>] [--yes] [--json]
+
 agentbar usage [provider] [--provider codex|copilot] [--refresh] [--json]
-agentbar note set <provider> [email] [note...] [--plan <provider-plan>] [--json]
-agentbar note clear <provider> [email] [--plan <provider-plan>] [--json]
+
+agentbar note set <provider> [email] [note...] [--plan <plan>] [--json]
+agentbar note clear <provider> [email] [--plan <plan>] [--json]
+
 agentbar config [--json]
 agentbar config list [--json]
 agentbar config get <key> [--json]
@@ -182,108 +143,91 @@ agentbar config set <key> <value> [--json]
 agentbar config unset <key> [--json]
 ```
 
-## Storage & Security
+## Storage and Security
 
-- Auth profiles are stored in: `~/.agentbar/store.json`
-- The store is plain JSON on disk. Treat it like a password file:
-  - do not share it,
-  - do not commit it,
-  - use `agentbar delete ...` if you need to remove a profile.
-- On POSIX systems, file permissions are hardened to `0600`.
-- Store writes are protected with file locking to reduce concurrent write issues.
-- `switch codex` applies the selected profile to Codex auth at:
-  - `$CODEX_HOME/auth.json` (if `CODEX_HOME` is set), or
-  - `~/.codex/auth.json`
+Paths:
+
+- Profile store: `~/.agentbar/store.json`
+- Config: `~/.agentbar/config.json`
+- Usage cache: `~/.agentbar/usage-cache.json`
+
+Security model:
+
+- Tokens are stored as plain JSON on disk.
+- Treat `~/.agentbar/store.json` as a password file.
+- Do not share or commit local store/config/cache files.
+- On POSIX systems, files are written with `0600`.
+- Store and cache writes use file locking for safer concurrent access.
 
 ## Configuration
 
-### Usage fetch performance
+Set and read config values:
 
-`agentbar usage` calls provider APIs and can take a few seconds depending on network and how many profiles you have.
-To keep repeated runs fast, `agentbar` uses a small TTL cache:
-
-- Cache file: `~/.agentbar/usage-cache.json`
-- Bypass cache: `agentbar usage --refresh`
-- Settings file: `~/.agentbar/config.json`
-
-Use `agentbar config list/get/set/unset` to manage these values:
-
-- `usage.timeoutMs` (default: `10000`)
-  - Per-profile HTTP timeout for usage fetch.
-- `usage.ttlMs` (default: `60000`)
-  - Cache TTL for successful usage rows.
-- `usage.errorTtlMs` (default: `10000`)
-  - Cache TTL for error usage rows (shorter by default so transient errors recover quickly).
-- `usage.concurrency` (default: `4`)
-  - Max number of profiles fetched concurrently.
-
-Supported keys for key-based commands:
-
-- `usage.timeoutMs` (non-negative integer)
-- `usage.ttlMs` (non-negative integer)
-- `usage.errorTtlMs` (non-negative integer)
-- `usage.concurrency` (positive integer)
-
-Example `config.json`:
-
-```json
-{
-  "usage": {
-    "timeoutMs": 10000,
-    "ttlMs": 60000,
-    "errorTtlMs": 10000,
-    "concurrency": 4
-  }
-}
+```bash
+agentbar config list
+agentbar config get usage.timeoutMs
+agentbar config set usage.timeoutMs 8000
+agentbar config unset usage.timeoutMs
 ```
 
-Debug environment variables:
+Supported keys:
 
-- `AGENTBAR_DEBUG_TIMING=1`
-  - Prints per-profile timing info to stderr (no secrets).
-- `AGENTBAR_DEBUG_STACK=1`
-  - Prints stack traces for unexpected errors.
+- `usage.timeoutMs` (default `10000`, non-negative integer)
+- `usage.ttlMs` (default `60000`, non-negative integer)
+- `usage.errorTtlMs` (default `10000`, non-negative integer)
+- `usage.concurrency` (default `4`, positive integer)
 
-### Output colors
+Usage cache behavior:
 
+- Successful rows are cached for `usage.ttlMs`.
+- Error rows are cached for `min(usage.errorTtlMs, usage.ttlMs)`.
+- Use `agentbar usage --refresh` to bypass cache.
+
+## Automation and Output
+
+- Use `--json` on list/switch/delete/usage/note/config commands for machine-readable output.
 - `NO_COLOR=1` disables ANSI colors.
-- `FORCE_COLOR=1` forces ANSI colors (useful in CI logs).
+- `FORCE_COLOR=1` forces ANSI colors.
+- `AGENTBAR_DEBUG_TIMING=1` prints per-profile timing to stderr.
+- `AGENTBAR_DEBUG_STACK=1` prints stack traces for unexpected errors.
 
 ## Development
-
-Install and run locally from source:
 
 ```bash
 git clone https://github.com/nbsp1221/agentbar
 cd agentbar
 bun install
 bun run src/index.ts --help
-```
-
-Run tests:
-
-```bash
 bun run test
 ```
 
-Run in watch mode:
+Watch mode:
 
 ```bash
 bun run test:watch
 ```
 
-## Roadmap
+## Release (Maintainers)
 
-- Optional one-shot CLI flags to override usage config values per run
-- Richer output formats and filters
-- Additional providers after MVP hardening
-- Release automation (tags/changelog)
-
-## Contributing
-
-Issues and PRs are welcome.  
-Before sending changes:
+npm publish is automated by GitHub Actions on `v*` tag pushes.
 
 ```bash
-bun run test
+npm version patch
+git push origin main --follow-tags
 ```
+
+Current workflow publishes with `npm publish --provenance`.
+
+Current auth model: npm trusted publishing (OIDC).
+
+One-time npm setup is required before the first release:
+
+1. Open npm package settings for `agentbar`.
+2. Add a Trusted Publisher for this GitHub repository/workflow.
+3. Target workflow file: `.github/workflows/publish-npm.yml`.
+
+After trusted publisher is configured, no `NPM_TOKEN` repository secret is needed.
+
+## Disclaimer
+
+`agentbar` is not affiliated with OpenAI or GitHub.
