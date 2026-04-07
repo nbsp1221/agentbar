@@ -87,5 +87,44 @@ describe("codex proactive refresh", () => {
 
     expect(out.updatedProfile).toBeUndefined();
   });
-});
 
+  test("returns provider error code when refresh token was already reused", async () => {
+    const now = Date.parse("2026-03-07T00:00:00.000Z");
+    const profile: AuthProfile = {
+      id: "p1",
+      provider: "codex",
+      email: "a@b.com",
+      createdAt: "2026-02-11T00:00:00.000Z",
+      updatedAt: "2026-02-12T00:00:00.000Z",
+      credentials: {
+        kind: "codex_oauth",
+        accessToken: "old",
+        refreshToken: "rt",
+        expiresAt: now - 1000
+      }
+    };
+
+    const fetchImpl = async (): Promise<Response> =>
+      new Response(
+        JSON.stringify({
+          error: {
+            message: "Your refresh token has already been used to generate a new access token.",
+            type: "invalid_request_error",
+            code: "refresh_token_reused"
+          }
+        }),
+        {
+          status: 401,
+          headers: { "Content-Type": "application/json" }
+        }
+      );
+
+    const out = await ensureFreshCodexProfile(profile, {
+      nowMs: now,
+      fetchImpl: fetchImpl as unknown as typeof fetch
+    });
+
+    expect(out.updatedProfile).toBeUndefined();
+    expect(out.error).toBe("refresh_token_reused");
+  });
+});

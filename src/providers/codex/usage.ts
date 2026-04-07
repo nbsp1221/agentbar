@@ -1,10 +1,8 @@
 import type { AuthProfile } from "../../store/types";
-import { CODEX_OAUTH_CLIENT_ID } from "./oauth";
-import { ensureFreshCodexProfile } from "./refresh";
+import { ensureFreshCodexProfile, refreshCodexAccessToken } from "./refresh";
 
 const BASE_URL = "https://chatgpt.com/backend-api";
 const RATE_LIMIT_URL = `${BASE_URL}/wham/usage`;
-const REFRESH_TOKEN_URL = "https://auth.openai.com/oauth/token";
 const USER_AGENT = "agentbar/0.1.0";
 
 type RateLimitPayload = {
@@ -21,12 +19,6 @@ type RateLimitPayload = {
       limit_window_seconds?: number;
     };
   };
-};
-
-type RefreshTokenResponse = {
-  access_token?: string;
-  refresh_token?: string;
-  id_token?: string;
 };
 
 type CodexOAuthProfile = AuthProfile & {
@@ -66,31 +58,6 @@ export function snapshotFromPayload(payload: RateLimitPayload): CodexUsageSnapsh
       : undefined,
     secondaryWindowSeconds: payload.rate_limit?.secondary_window?.limit_window_seconds
   };
-}
-
-async function refreshAccessToken(
-  refreshToken: string,
-  fetchImpl: typeof fetch
-): Promise<RefreshTokenResponse | null> {
-  const body = new URLSearchParams({
-    client_id: CODEX_OAUTH_CLIENT_ID,
-    grant_type: "refresh_token",
-    refresh_token: refreshToken
-  });
-
-  const res = await fetchImpl(REFRESH_TOKEN_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      "User-Agent": USER_AGENT
-    },
-    body: body.toString()
-  });
-
-  if (!res.ok) {
-    return null;
-  }
-  return (await res.json()) as RefreshTokenResponse;
 }
 
 async function fetchRateLimit(
@@ -159,9 +126,9 @@ export async function fetchCodexUsageForProfile(
   }
 
   if (first.status === 401 && codexProfile.credentials.refreshToken) {
-    const refreshed = await refreshAccessToken(codexProfile.credentials.refreshToken, fetchImpl);
-    if (!refreshed?.access_token) {
-      return { updatedProfile: fresh.updatedProfile, error: "refresh_failed" };
+    const refreshed = await refreshCodexAccessToken(codexProfile.credentials.refreshToken, fetchImpl);
+    if (!refreshed.ok || !refreshed.tokens.access_token) {
+      return { updatedProfile: fresh.updatedProfile, error: refreshed.error };
     }
 
     const updated: CodexOAuthProfile = {
@@ -169,9 +136,9 @@ export async function fetchCodexUsageForProfile(
       updatedAt: new Date().toISOString(),
       credentials: {
         ...codexProfile.credentials,
-        accessToken: refreshed.access_token,
-        refreshToken: refreshed.refresh_token ?? codexProfile.credentials.refreshToken,
-        idToken: refreshed.id_token ?? codexProfile.credentials.idToken,
+        accessToken: refreshed.tokens.access_token,
+        refreshToken: refreshed.tokens.refresh_token ?? codexProfile.credentials.refreshToken,
+        idToken: refreshed.tokens.id_token ?? codexProfile.credentials.idToken,
         lastRefresh: new Date().toISOString()
       }
     };

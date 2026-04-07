@@ -14,6 +14,24 @@ type RefreshTokenResponse = {
   expires_in?: number;
 };
 
+type RefreshTokenErrorPayload = {
+  error?: {
+    message?: string;
+    type?: string;
+    code?: string;
+  };
+};
+
+type RefreshAccessTokenResult =
+  | {
+      ok: true;
+      tokens: RefreshTokenResponse;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+
 function numberOrUndefined(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
@@ -76,10 +94,30 @@ function isExpiredOrStale(params: {
   return params.nowMs >= effectiveExpiresAt - params.bufferMs;
 }
 
-async function refreshAccessToken(
+function extractRefreshTokenErrorCode(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== "object") {
+    return undefined;
+  }
+
+  const error = (payload as RefreshTokenErrorPayload).error;
+  if (!error || typeof error !== "object") {
+    return undefined;
+  }
+
+  if (typeof error.code === "string" && error.code.trim().length > 0) {
+    return error.code.trim();
+  }
+  if (typeof error.type === "string" && error.type.trim().length > 0) {
+    return error.type.trim();
+  }
+
+  return undefined;
+}
+
+export async function refreshCodexAccessToken(
   refreshToken: string,
   fetchImpl: typeof fetch
-): Promise<RefreshTokenResponse | null> {
+): Promise<RefreshAccessTokenResult> {
   const body = new URLSearchParams({
     client_id: CODEX_OAUTH_CLIENT_ID,
     grant_type: "refresh_token",
@@ -96,9 +134,18 @@ async function refreshAccessToken(
   });
 
   if (!res.ok) {
-    return null;
+    let error = "refresh_failed";
+    try {
+      error = extractRefreshTokenErrorCode((await res.json()) as unknown) ?? error;
+    } catch {
+      // Fall back to the generic status when the response body is not valid JSON.
+    }
+    return { ok: false, error };
   }
-  return (await res.json()) as RefreshTokenResponse;
+  return {
+    ok: true,
+    tokens: (await res.json()) as RefreshTokenResponse
+  };
 }
 
 export async function ensureFreshCodexProfile(
@@ -135,18 +182,18 @@ export async function ensureFreshCodexProfile(
     return {};
   }
 
-  const refreshed = await refreshAccessToken(profile.credentials.refreshToken, fetchImpl);
-  if (!refreshed?.access_token) {
+  const refreshed = await refreshCodexAccessToken(profile.credentials.refreshToken, fetchImpl);
+  if (!refreshed.ok || !refreshed.tokens.access_token) {
     if (requireFresh) {
-      return { error: "refresh_failed" };
+      return { error: refreshed.error };
     }
-    return { error: "refresh_failed" };
+    return { error: refreshed.error };
   }
 
   const refreshedAtIso = new Date(nowMs).toISOString();
   const nextExpiresAt = coerceExpiresAtMs({
-    accessToken: refreshed.access_token,
-    expiresInSeconds: refreshed.expires_in,
+    accessToken: refreshed.tokens.access_token,
+    expiresInSeconds: refreshed.tokens.expires_in,
     lastRefreshMs: nowMs
   });
 
@@ -155,9 +202,9 @@ export async function ensureFreshCodexProfile(
     updatedAt: refreshedAtIso,
     credentials: {
       ...profile.credentials,
-      accessToken: refreshed.access_token,
-      refreshToken: refreshed.refresh_token ?? profile.credentials.refreshToken,
-      idToken: refreshed.id_token ?? profile.credentials.idToken,
+      accessToken: refreshed.tokens.access_token,
+      refreshToken: refreshed.tokens.refresh_token ?? profile.credentials.refreshToken,
+      idToken: refreshed.tokens.id_token ?? profile.credentials.idToken,
       expiresAt: nextExpiresAt,
       lastRefresh: refreshedAtIso
     }
@@ -165,4 +212,3 @@ export async function ensureFreshCodexProfile(
 
   return { updatedProfile: updated };
 }
-
