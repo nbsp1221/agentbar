@@ -18,6 +18,8 @@ import {
 } from "../services/settings";
 import { settingKeys, type SettingValues } from "../config/settings";
 
+declare const AGENTBAR_VERSION: string | undefined;
+
 function requireProvider(value: ReturnType<typeof parseProviderArg>, raw: string): NonNullable<ReturnType<typeof parseProviderArg>> {
   if (!value) {
     throw new Error(`Invalid provider: ${raw} (allowed: codex, copilot)`);
@@ -40,6 +42,10 @@ function printSettings(settings: SettingValues, outputJson: boolean | undefined)
 }
 
 function resolveCliVersion(): string {
+  if (typeof AGENTBAR_VERSION === "string" && AGENTBAR_VERSION.trim().length > 0) {
+    return AGENTBAR_VERSION.trim();
+  }
+
   try {
     const raw = readFileSync(new URL("../../package.json", import.meta.url), "utf8");
     const parsed = JSON.parse(raw) as { version?: unknown };

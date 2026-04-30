@@ -2,6 +2,10 @@ export const GITHUB_DEVICE_CLIENT_ID = "Iv1.b507a08c87ecfe98";
 export const GITHUB_DEVICE_CODE_URL = "https://github.com/login/device/code";
 export const GITHUB_DEVICE_TOKEN_URL = "https://github.com/login/oauth/access_token";
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export type DeviceCodeResponse = {
   device_code: string;
   user_code: string;
@@ -89,11 +93,11 @@ export async function pollForAccessToken(
     } catch (error) {
       const msg = (error as Error).message;
       if (msg === "authorization_pending") {
-        await Bun.sleep(params.intervalMs);
+        await sleep(params.intervalMs);
         continue;
       }
       if (msg === "slow_down") {
-        await Bun.sleep(params.intervalMs + 2000);
+        await sleep(params.intervalMs + 2000);
         continue;
       }
       if (msg === "expired_token") {

@@ -11,34 +11,54 @@ CLI to manage multiple AI auth profiles and usage in one place.
 
 ## Requirements
 
-- [Bun](https://bun.sh/) `>= 1.3` (required at runtime)
-- npm (optional, only if you install via npm)
+- [Node.js](https://nodejs.org/) `>= 20.19` for the published CLI, npm, npx, and global installs.
+- [Bun](https://bun.sh/) `>= 1.3` is used for development and may be used as a package runner.
 
-`agentbar` is distributed through npm, but the executable runs with Bun (`#!/usr/bin/env bun`).
+The published `agentbar` executable uses a Node shebang for npm ecosystem compatibility.
 
 ## Installation
 
-Recommended (Bun):
+Run without installing globally:
 
 ```bash
-bun add -g agentbar
-agentbar --help
+npx agentbar@latest --help
+# or, with Bun as the package runner when Node.js is available:
+bunx agentbar@latest --help
 ```
 
-Alternative (npm):
+Global install:
 
 ```bash
 npm install -g agentbar
 agentbar --help
 ```
 
+You can also install with Bun's package manager when Node.js is available:
+
+```bash
+bun install -g agentbar
+agentbar --help
+```
+
+To force Bun's runtime for one-off execution:
+
+```bash
+bunx --bun agentbar@latest --help
+```
+
 Update:
 
 ```bash
-bun update -g agentbar
-# or, if installed via npm:
 npm update -g agentbar
+# or, if installed with Bun:
+bun update -g agentbar
 ```
+
+### Runtime Notes
+
+- `npm install -g agentbar` and `npx agentbar` require Node.js.
+- `bunx agentbar` works as a Bun package runner and follows Bun's executable behavior.
+- `bun install -g agentbar` installs the same npm package, but the global executable uses the Node shebang.
 
 ## Quick Start
 
@@ -197,8 +217,10 @@ Usage cache behavior:
 git clone https://github.com/nbsp1221/agentbar
 cd agentbar
 bun install
-bun run src/index.ts --help
 bun run test
+bun run build
+bun run test:package
+bun run src/index.ts --help
 ```
 
 Watch mode:

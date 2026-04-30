@@ -43,6 +43,12 @@ jobs:
       - name: Run tests
         run: bun run test
 
+      - name: Build package
+        run: bun run build
+
+      - name: Verify packed package in Node-only container
+        run: bun run test:package
+
       - name: Publish to npm
         # Uses npm trusted publishing (OIDC), so token-based auth is not required.
         run: npm publish --provenance
